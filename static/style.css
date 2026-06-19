@@ -99,3 +99,4 @@ td small{color:var(--mut);font-size:10.5px}
   border-radius:30px;cursor:pointer;white-space:nowrap}
 .dl.mik{background:#7a5cff;color:#fff;box-shadow:0 8px 20px rgba(122,92,255,.3)}
 .dl.alt{background:var(--panel2);color:var(--txt);border:1px solid var(--line);box-shadow:none}
+.dl.line{background:#06c755;color:#fff;border:0;cursor:pointer;box-shadow:0 8px 20px rgba(6,199,85,.3)}

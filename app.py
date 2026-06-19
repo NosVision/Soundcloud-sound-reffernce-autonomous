@@ -22,6 +22,7 @@ from scfinder.finder import COLUMNS
 from scfinder.client import SoundCloudClient, SoundCloudError
 from scfinder.mockclient import MockClient
 from scfinder.export import EXPORTERS
+from scfinder.notify import notify_line_results
 
 app = Flask(__name__)
 BASE_CFG = load_config()
@@ -128,6 +129,18 @@ def export(fmt):
         as_attachment=True,
         download_name=fname,
     )
+
+
+@app.route("/api/notify", methods=["POST"])
+def api_notify():
+    """ส่งผลรันล่าสุดเข้า LINE (ใช้ LINE_CHANNEL_TOKEN/LINE_TO จาก env)"""
+    if not _last["results"]:
+        return jsonify({"ok": False, "info": "ยังไม่มีผล — Run ก่อน"}), 200
+    from datetime import datetime
+    when = datetime.now().strftime("%Y-%m-%d %H:%M")
+    cfg = load_config()   # อ่าน token ล่าสุดจาก env
+    ok, info = notify_line_results(_last["results"], cfg, when=when)
+    return jsonify({"ok": ok, "info": info})
 
 
 if __name__ == "__main__":

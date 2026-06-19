@@ -103,7 +103,7 @@ async function run() {
     const demo = data.demo ? '<span class="badge">DEMO</span>' : "";
     $("status").innerHTML = `✅ ได้ ${data.count} เพลง ` + demo;
     const has = ROWS.length > 0;
-    ["dlBtn", "dlMik", "dlM3u", "harmonicBtn"].forEach((id) =>
+    ["dlBtn", "dlMik", "dlM3u", "harmonicBtn", "lineBtn"].forEach((id) =>
       $(id).classList.toggle("hidden", !has));
   } catch (e) {
     $("status").textContent = "❌ " + e;
@@ -131,6 +131,17 @@ $("harmonicBtn").addEventListener("click", () => {
 });
 
 $("camChip").addEventListener("click", () => { CAM_FILTER = ""; render(); });
+
+$("lineBtn").addEventListener("click", async () => {
+  $("status").textContent = "กำลังส่งเข้า LINE…";
+  try {
+    const res = await fetch("/api/notify", { method: "POST" });
+    const d = await res.json();
+    $("status").innerHTML = (d.ok ? "✅ ส่งเข้า LINE แล้ว " : "❌ ") + esc(d.info || "");
+  } catch (e) {
+    $("status").textContent = "❌ " + e;
+  }
+});
 
 function render() {
   const q = $("filterText").value.trim().toLowerCase();

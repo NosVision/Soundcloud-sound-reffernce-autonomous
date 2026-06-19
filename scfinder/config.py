@@ -32,6 +32,7 @@ DEFAULTS = {
     "duration": {"min_minutes": 0, "max_minutes": 0},   # 0 = ไม่จำกัด
     "bpm": {"min": 0, "max": 0},                         # 0 = ไม่จำกัด (Phase 2)
     "dedupe": {"enabled": True, "seen_file": "seen.json"},
+    "notify": {"line": {"enabled": False, "channel_token": "", "to": "", "top_n": 10}},
     "auth": {"oauth_token": "", "client_id_override": ""},
     "output": "sc_references.csv",
     "demo_mode": False,           # True = ใช้ mock data (ไม่ต่อเน็ต) ลอง dashboard ได้เลย
@@ -57,12 +58,17 @@ class Config:
     client_id_override: str = ""
     output: str = DEFAULTS["output"]
     demo_mode: bool = False
+    # ---- Phase 3: LINE notify ----
+    line_enabled: bool = False
+    line_token: str = ""          # ใส่ผ่าน env LINE_CHANNEL_TOKEN
+    line_to: str = ""             # ใส่ผ่าน env LINE_TO
+    notify_top_n: int = 10
 
     def to_public_dict(self) -> dict:
         """สำหรับส่งให้ dashboard — ตัด secret (token) ออก"""
         d = asdict(self)
-        d.pop("oauth_token", None)
-        d.pop("client_id_override", None)
+        for k in ("oauth_token", "client_id_override", "line_token", "line_to"):
+            d.pop(k, None)
         return d
 
 
@@ -94,6 +100,7 @@ def load_config(path: str = "config.yaml") -> Config:
     bpm = data.get("bpm") or {}
     dedupe = data.get("dedupe") or {}
     auth = data.get("auth") or {}
+    line = ((data.get("notify") or {}).get("line")) or {}
 
     cfg = Config(
         profile_url=data["profile_url"],
@@ -113,12 +120,21 @@ def load_config(path: str = "config.yaml") -> Config:
         client_id_override=str(auth.get("client_id_override", "") or ""),
         output=data["output"],
         demo_mode=bool(data.get("demo_mode", False)),
+        line_enabled=bool(line.get("enabled", False)),
+        line_token=str(line.get("channel_token", "") or ""),
+        line_to=str(line.get("to", "") or ""),
+        notify_top_n=int(line.get("top_n", 10) or 10),
     )
 
     # env override (secret + profile)
     cfg.oauth_token = os.environ.get("SC_OAUTH_TOKEN", cfg.oauth_token)
     cfg.client_id_override = os.environ.get("SC_CLIENT_ID", cfg.client_id_override)
     cfg.profile_url = os.environ.get("SC_PROFILE_URL", cfg.profile_url)
+    cfg.line_token = os.environ.get("LINE_CHANNEL_TOKEN", cfg.line_token)
+    cfg.line_to = os.environ.get("LINE_TO", cfg.line_to)
+    # ถ้ามี token+to ครบ ถือว่าเปิด notify ให้เลย (สะดวกตอน cron)
+    if cfg.line_token and cfg.line_to:
+        cfg.line_enabled = True
     return cfg
 
 

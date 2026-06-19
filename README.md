@@ -41,7 +41,10 @@ Slow Grind NIE Remix, YO-ZU edit ฯลฯ) เพลงพวกนี้ **ไ
 │   ├── camelot.py           # 🆕 key -> Camelot + หาคีย์ที่ mix เข้ากัน (Phase 2)
 │   ├── mixset.py            # 🆕 เรียงเป็นลำดับ mix ต่อกัน (harmonic set)
 │   ├── export.py            # 🆕 export: Mixed In Key CSV / M3U8 / JSON
+│   ├── notify.py            # 🆕 แจ้งเตือนเข้า LINE (Messaging API) — Phase 3
 │   └── finder.py            #   pipeline: seeds -> related -> co-occurrence rank (+bpm/key/camelot)
+├── autorun.py               # 🆕 รัน 1 รอบสำหรับ cron/launchd + ส่ง LINE (Phase 3)
+├── AUTORUN.md               # 🆕 คู่มือตั้ง LINE + cron/launchd
 ├── templates/ , static/     # 🆕 หน้า dashboard (HTML/CSS/JS) ธีมดำ-ส้ม / ขาว-ส้ม
 ├── config.example.yaml      # 🆕 ตัวอย่าง config (คัดลอกเป็น config.yaml)
 ├── .env.example             # 🆕 ตัวอย่างใส่ของลับ (oauth/client_id)
@@ -199,11 +202,16 @@ seeds[] ──┬─ /tracks/{id}/related ──► candidates
 - [x] จัดกลุ่ม/กรองตาม BPM range + Camelot wheel (compatible keys) — `camelot.py`, `mixset.py`
 - [x] 🆕 **Mixed In Key integration**: export Camelot CSV / M3U8, ปุ่ม harmonic order + คลิก key กรองเพลงที่ mix เข้ากัน
 
-### Phase 3 — Autonomous loop
-- [ ] รันเป็น cron / launchd บน Mac Mini (เช่นทุกวันจันทร์เช้า)
+### Phase 3 — Autonomous loop 🚧 (กำลังทำ)
+- [x] รันเป็น cron / launchd บน Mac Mini (`autorun.py` + `AUTORUN.md`)
+- [x] **แจ้งเตือนผ่าน LINE** ว่า "มี reference ใหม่ N เพลงรอคัด" (Messaging API + ปุ่ม 📱 บน dashboard)
 - [ ] ส่ง output เข้า Obsidian vault (NOS-VISION-BRAIN) หรือ Notion อัตโนมัติ
-- [ ] แจ้งเตือนผ่าน LINE / Discord ว่า "มี reference ใหม่ N เพลงรอคัด"
 - [ ] (optional) auto-สร้าง playlist บน SC จาก top picks ผ่าน oauth
+
+### Phase 4 — เรียนรู้รสนิยม (Tinder-style feedback) 🔜
+- [ ] ฟังเพลงแล้วปัดซ้าย/ขวา (👎/👍) บน dashboard
+- [ ] โมเดลเรียนรู้ like/dislike -> re-rank รอบหน้าให้ตรงขึ้น (โดยไม่ทำลาย co-occurrence)
+- [ ] โชว์ "taste profile" (genre/BPM/Camelot ที่ชอบ)
 
 ### หลักที่อยากให้รักษาไว้ตอน build ต่อ
 1. **read-only, ใช้ส่วนตัว** — อย่ายิง API ถี่ ใส่ sleep/backoff เสมอ

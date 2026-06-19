@@ -39,6 +39,15 @@ dedupe:
   enabled: true
   seen_file: "seen.json"
 
+# แจ้งเตือนเข้า LINE (Phase 3) — ใช้ LINE Messaging API (Notify ปิดแล้ว)
+# แนะนำใส่ token/to ผ่าน .env (LINE_CHANNEL_TOKEN / LINE_TO) แทนตรงนี้
+notify:
+  line:
+    enabled: false
+    channel_token: ""   # Channel access token (long-lived) ; หรือ env LINE_CHANNEL_TOKEN
+    to: ""              # userId / groupId ปลายทาง ; หรือ env LINE_TO
+    top_n: 10           # โชว์กี่เพลงในข้อความแจ้งเตือน
+
 # ของลับ — ปล่อยว่างได้ ถ้าใส่แนะนำผ่าน .env แทน
 auth:
   oauth_token: ""         # ใส่ถ้า likes เป็น private
