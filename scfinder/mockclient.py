@@ -40,35 +40,37 @@ def _track(rec):
 
 _BY_ID = {r[0]: _track(r) for r in _CATALOG}
 
+# anchor = เพลง 'ยอดนิยมในแนว' จงใจให้โผล่ใน related บ่อย -> matched_seeds สูง = ตรงแนวสุด
+# แยกออกจาก seed เสมอ เพื่อให้ demo เห็นผลไม่ว่า max_seeds เท่าไหร่
+_ANCHORS = [1003, 1005, 1007, 1012]
+# เพลงที่ใช้เป็น 'likes' (ไม่รวม anchor -> anchor จะไม่ถูกตัดทิ้งตอน remove seed)
+_LIKE_POOL = [1001, 1002, 1004, 1006, 1008, 1010, 1013, 1015]
+
 
 class MockClient:
     def __init__(self, *_, **__):
         self.client_id = "MOCKCLIENTID0000000000"
-        random.seed(7)  # ผลคงที่ เทสต์ได้
 
     def resolve_user_id(self, profile_url: str) -> int:
         return 999
 
     def resolve_track(self, track_url: str):
-        # ลองจับ id จากท้าย url ก่อน ไม่งั้นสุ่มจากคลัง (deterministic ตาม url)
+        # ลองจับ id จากท้าย url ก่อน ไม่งั้น map แบบคงที่ตาม url (ไม่เอา anchor มาเป็น seed)
         for tid in _BY_ID:
             if str(tid) in track_url:
                 return _BY_ID[tid]
-        idx = abs(hash(track_url)) % len(_CATALOG)
-        return _track(_CATALOG[idx])
+        idx = abs(hash(track_url)) % len(_LIKE_POOL)
+        return _BY_ID[_LIKE_POOL[idx]]
 
     def get_liked_tracks(self, user_id: int, max_seeds: int) -> list:
-        return [_BY_ID[t] for t in list(_BY_ID)[:max_seeds]]
+        return [_BY_ID[t] for t in _LIKE_POOL[:max(1, max_seeds)]]
 
     def get_related(self, track_id: int, limit: int) -> list:
-        """
-        ทำให้บางเพลง 'ยอดนิยมในแนว' (1003,1005,1007,1012) โผล่ใน related บ่อย
-        -> ได้ matched_seeds สูง = ตรงแนวสุด เหมือนของจริง
-        """
-        anchors = [1003, 1005, 1007, 1012]
+        """anchor โผล่เกือบทุกครั้ง + สุ่มเพิ่มให้หลากหลาย (deterministic ตาม track_id)"""
         rnd = random.Random(track_id)
-        pool = [t for t in _BY_ID if t != track_id]
-        picks = set(a for a in anchors if a != track_id)        # anchor โผล่เกือบทุกครั้ง
-        while len(picks) < min(limit, 8):
-            picks.add(rnd.choice(pool))
+        others = [t for t in _BY_ID if t != track_id]
+        picks = [a for a in _ANCHORS if a != track_id]   # anchor มาก่อน -> matched_seeds สูง
+        extra = [t for t in others if t not in picks]
+        rnd.shuffle(extra)
+        picks += extra[:max(0, min(limit, 8) - len(picks))]
         return [_BY_ID[t] for t in picks]

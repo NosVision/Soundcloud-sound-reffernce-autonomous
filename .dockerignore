@@ -1,0 +1,7 @@
+__pycache__/
+*.pyc
+.git/
+.env
+config.yaml
+seen.json
+*.csv

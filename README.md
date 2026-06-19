@@ -73,6 +73,8 @@ python3 app.py
 วางลิงก์เพลงที่ชอบ → ปรับ config → กด **Run** → ได้ตารางเรียงตาม `matched_seeds` → กด **⬇ CSV**
 มีปุ่มสลับธีม **ดำ-ส้ม / ขาว-ส้ม** และ **demo mode** (ลองได้เลยไม่ต้องต่อเน็ต)
 
+> 🌐 อยากเปิดเป็น **URL จริง** (Render / Hugging Face Spaces / Fly.io)? ดู **[DEPLOY.md](DEPLOY.md)** — มี `Procfile` / `render.yaml` / `Dockerfile` เตรียมไว้ให้แล้ว
+
 ### B) CLI
 
 ```bash

@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: sc-reference-finder
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app --bind 0.0.0.0:$PORT --workers 2 --timeout 120
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.11"
+      # ของลับ (ใส่ค่าจริงในหน้า Render dashboard -> Environment)
+      - key: SC_OAUTH_TOKEN
+        sync: false
+      - key: SC_CLIENT_ID
+        sync: false
+      - key: SC_PROFILE_URL
+        sync: false
