@@ -34,7 +34,8 @@ def build_client(cfg):
 def main():
     cfg = load_config()
     client = build_client(cfg)
-    store = SeenStore(cfg.seen_file, cfg.dedupe_enabled)
+    from scfinder.storage import make_storage
+    store = SeenStore(cfg.seen_file, cfg.dedupe_enabled, storage=make_storage(cfg))
 
     try:
         results = find_references(client, cfg, store, log=print)

@@ -21,6 +21,7 @@ from scfinder.export import to_mixedinkey_csv, to_m3u8
 from scfinder.client import SoundCloudClient, SoundCloudError
 from scfinder.mockclient import MockClient
 from scfinder.notify import notify_line_results
+from scfinder.storage import make_storage
 
 
 def build_client(cfg):
@@ -39,7 +40,7 @@ def main():
 
     cfg = load_config()
     client = build_client(cfg)
-    store = SeenStore(cfg.seen_file, cfg.dedupe_enabled)
+    store = SeenStore(cfg.seen_file, cfg.dedupe_enabled, storage=make_storage(cfg))
 
     try:
         results = find_references(client, cfg, store, log=print)

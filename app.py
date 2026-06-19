@@ -13,9 +13,12 @@ Dashboard เว็บ สำหรับ SC Reference Finder
 
 import io
 import csv
+import os
+import secrets
 from dataclasses import replace
 
-from flask import Flask, jsonify, render_template, request, send_file, abort
+from flask import (Flask, jsonify, render_template, request, send_file, abort,
+                   session, redirect, url_for, make_response)
 
 from scfinder import load_config, find_references, SeenStore
 from scfinder.finder import COLUMNS
@@ -24,11 +27,51 @@ from scfinder.mockclient import MockClient
 from scfinder.export import EXPORTERS
 from scfinder.notify import notify_line_results
 from scfinder.feedback import FeedbackStore, PreferenceModel, annotate_and_rank
+from scfinder.storage import make_storage
 
 app = Flask(__name__)
 BASE_CFG = load_config()
+app.secret_key = BASE_CFG.secret_key or secrets.token_hex(16)
+STORAGE = make_storage(BASE_CFG)     # None = ใช้ไฟล์ local ; ไม่ None = Supabase
 _last = {"csv": "", "results": []}   # เก็บผลรันล่าสุดไว้ export
 FEEDBACK_FILE = "feedback.json"
+
+
+# ---------- auth (เปิดเมื่อมี APP_PASSWORD) ----------
+APP_PASSWORD = BASE_CFG.app_password
+
+
+@app.before_request
+def _guard():
+    if not APP_PASSWORD:                       # ไม่ตั้งรหัส = เปิดโล่ง (dev)
+        return
+    if request.endpoint == "static" or request.path in ("/login", "/sw.js"):
+        return
+    if session.get("auth"):
+        return
+    if request.path.startswith(("/api", "/export")) or request.path == "/download":
+        return abort(401)
+    return redirect(url_for("login"))
+
+
+@app.route("/login", methods=["GET", "POST"])
+def login():
+    if not APP_PASSWORD:
+        return redirect(url_for("index"))
+    err = ""
+    if request.method == "POST":
+        if request.form.get("password") == APP_PASSWORD:
+            session["auth"] = True
+            session.permanent = True
+            return redirect(url_for("index"))
+        err = "รหัสผ่านไม่ถูกต้อง"
+    return render_template("login.html", err=err)
+
+
+@app.route("/logout")
+def logout():
+    session.clear()
+    return redirect(url_for("login"))
 
 
 def build_client(cfg):
@@ -68,6 +111,14 @@ def cfg_from_form(form: dict):
     )
 
 
+@app.route("/sw.js")
+def service_worker():
+    resp = make_response(app.send_static_file("sw.js"))
+    resp.headers["Content-Type"] = "application/javascript"
+    resp.headers["Service-Worker-Allowed"] = "/"     # ให้ scope ครอบ "/"
+    return resp
+
+
 @app.route("/")
 def index():
     return render_template("dashboard.html", cfg=BASE_CFG.to_public_dict())
@@ -80,7 +131,7 @@ def api_run():
 
     logs = []
     client = build_client(cfg)
-    store = SeenStore(cfg.seen_file, cfg.dedupe_enabled)
+    store = SeenStore(cfg.seen_file, cfg.dedupe_enabled, storage=STORAGE)
 
     try:
         results = find_references(client, cfg, store, log=logs.append)
@@ -158,7 +209,7 @@ def api_feedback():
     track = data.get("track") or {}
     if not (track.get("track_id") or track.get("id")):
         return jsonify({"ok": False, "info": "ไม่มี track"}), 200
-    store = FeedbackStore(FEEDBACK_FILE)
+    store = FeedbackStore(FEEDBACK_FILE, storage=STORAGE)
     store.record(track, bool(data.get("liked")))
     store.save()
     return jsonify({"ok": True, **_profile_payload(store)})
@@ -167,7 +218,7 @@ def api_feedback():
 @app.route("/api/profile")
 def api_profile():
     """taste profile + รายการ track_id ที่ปัดแล้ว (ไว้ข้ามใน swipe queue)"""
-    store = FeedbackStore(FEEDBACK_FILE)
+    store = FeedbackStore(FEEDBACK_FILE, storage=STORAGE)
     return jsonify({"ok": True, "rated": sorted(store.rated_ids()),
                     **_profile_payload(store)})
 
@@ -177,7 +228,7 @@ def api_rerank():
     """จัดอันดับผลรันล่าสุดใหม่ด้วยรสนิยมที่เรียนรู้ (co-occurrence ยังนำ)"""
     if not _last["results"]:
         return jsonify({"ok": False, "info": "ยังไม่มีผล — Run ก่อน"}), 200
-    store = FeedbackStore(FEEDBACK_FILE)
+    store = FeedbackStore(FEEDBACK_FILE, storage=STORAGE)
     if not store.records:
         return jsonify({"ok": False, "info": "ยังไม่มี feedback — ปัดเพลงก่อน"}), 200
     ranked = annotate_and_rank(_last["results"], store.records, weight=0.5)

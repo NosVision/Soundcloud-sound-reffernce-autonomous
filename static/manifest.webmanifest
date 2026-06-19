@@ -1,0 +1,13 @@
+{
+  "name": "SC Reference Finder",
+  "short_name": "SC Finder",
+  "description": "หา reference เพลงตรงแนวจาก SoundCloud + ปัดเลือกแบบ Tinder",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0a0a0c",
+  "theme_color": "#ff5a1f",
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}

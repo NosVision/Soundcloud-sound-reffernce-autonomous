@@ -1,5 +1,11 @@
 "use strict";
 
+// PWA: register service worker (ติดตั้งเป็นแอปบนมือถือได้)
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () =>
+    navigator.serviceWorker.register("/sw.js").catch(() => {}));
+}
+
 let MODE = "urls";
 let ROWS = [];
 let sortKey = "matched_seeds";

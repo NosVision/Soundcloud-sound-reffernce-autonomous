@@ -10,14 +10,18 @@ from typing import Iterable, Set
 
 
 class SeenStore:
-    def __init__(self, path: str = "seen.json", enabled: bool = True):
+    def __init__(self, path: str = "seen.json", enabled: bool = True, storage=None):
         self.path = path
         self.enabled = enabled
+        self.storage = storage      # ถ้ามี = ใช้ Supabase แทนไฟล์
         self.seen: Set[int] = set()
         if enabled:
             self._load()
 
     def _load(self) -> None:
+        if self.storage:
+            self.seen = self.storage.load_seen()
+            return
         if not os.path.exists(self.path):
             return
         try:
@@ -36,6 +40,9 @@ class SeenStore:
 
     def save(self) -> None:
         if not self.enabled:
+            return
+        if self.storage:
+            self.storage.save_seen(self.seen)
             return
         tmp = f"{self.path}.tmp"
         with open(tmp, "w", encoding="utf-8") as f:

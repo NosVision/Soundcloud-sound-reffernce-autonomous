@@ -44,12 +44,16 @@ def track_features(t: dict) -> Dict[str, str]:
 class FeedbackStore:
     """เก็บ record การปัด -> feedback.json"""
 
-    def __init__(self, path: str = "feedback.json"):
+    def __init__(self, path: str = "feedback.json", storage=None):
         self.path = path
+        self.storage = storage      # ถ้ามี = ใช้ Supabase แทนไฟล์
         self.records: List[dict] = []
         self._load()
 
     def _load(self):
+        if self.storage:
+            self.records = self.storage.load_feedback()
+            return
         if not os.path.exists(self.path):
             return
         try:
@@ -76,6 +80,9 @@ class FeedbackStore:
         return rec
 
     def save(self):
+        if self.storage:
+            self.storage.save_feedback(self.records)
+            return
         tmp = f"{self.path}.tmp"
         with open(tmp, "w", encoding="utf-8") as f:
             json.dump({"records": self.records,

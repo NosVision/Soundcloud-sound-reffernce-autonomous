@@ -15,3 +15,17 @@ services:
         sync: false
       - key: SC_PROFILE_URL
         sync: false
+      # login + เก็บข้อมูลถาวร (ดู SUPABASE.md)
+      - key: APP_PASSWORD
+        sync: false
+      - key: SECRET_KEY
+        generateValue: true        # Render สุ่มให้เอง
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_KEY
+        sync: false
+      # แจ้งเตือน LINE (ดู AUTORUN.md)
+      - key: LINE_CHANNEL_TOKEN
+        sync: false
+      - key: LINE_TO
+        sync: false

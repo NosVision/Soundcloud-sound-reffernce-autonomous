@@ -63,11 +63,17 @@ class Config:
     line_token: str = ""          # ใส่ผ่าน env LINE_CHANNEL_TOKEN
     line_to: str = ""             # ใส่ผ่าน env LINE_TO
     notify_top_n: int = 10
+    # ---- deploy: Supabase + auth (env เท่านั้น) ----
+    supabase_url: str = ""        # env SUPABASE_URL
+    supabase_key: str = ""        # env SUPABASE_KEY (service_role — server-side)
+    app_password: str = ""        # env APP_PASSWORD (ล็อกอิน dashboard)
+    secret_key: str = ""          # env SECRET_KEY (เซ็น session)
 
     def to_public_dict(self) -> dict:
         """สำหรับส่งให้ dashboard — ตัด secret (token) ออก"""
         d = asdict(self)
-        for k in ("oauth_token", "client_id_override", "line_token", "line_to"):
+        for k in ("oauth_token", "client_id_override", "line_token", "line_to",
+                  "supabase_url", "supabase_key", "app_password", "secret_key"):
             d.pop(k, None)
         return d
 
@@ -135,6 +141,12 @@ def load_config(path: str = "config.yaml") -> Config:
     # ถ้ามี token+to ครบ ถือว่าเปิด notify ให้เลย (สะดวกตอน cron)
     if cfg.line_token and cfg.line_to:
         cfg.line_enabled = True
+    # deploy: Supabase + auth (env เท่านั้น)
+    cfg.supabase_url = os.environ.get("SUPABASE_URL", cfg.supabase_url)
+    cfg.supabase_key = os.environ.get("SUPABASE_KEY",
+                       os.environ.get("SUPABASE_SERVICE_KEY", cfg.supabase_key))
+    cfg.app_password = os.environ.get("APP_PASSWORD", cfg.app_password)
+    cfg.secret_key = os.environ.get("SECRET_KEY", cfg.secret_key)
     return cfg
 
 

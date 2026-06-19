@@ -43,9 +43,13 @@ Slow Grind NIE Remix, YO-ZU edit ฯลฯ) เพลงพวกนี้ **ไ
 │   ├── export.py            # 🆕 export: Mixed In Key CSV / M3U8 / JSON
 │   ├── notify.py            # 🆕 แจ้งเตือนเข้า LINE (Messaging API) — Phase 3
 │   ├── feedback.py          # 🆕 like/dislike store + โมเดลเรียนรู้รสนิยม — Phase 4
+│   ├── storage.py           # 🆕 สลับเก็บข้อมูล local JSON ↔ Supabase (deploy)
 │   └── finder.py            #   pipeline: seeds -> related -> co-occurrence rank (+bpm/key/camelot)
+├── templates/login.html     # 🆕 หน้า login (เปิดเมื่อตั้ง APP_PASSWORD)
+├── static/{manifest.webmanifest,sw.js,icon.svg}  # 🆕 PWA — ติดตั้งเป็นแอปบนมือถือได้
 ├── autorun.py               # 🆕 รัน 1 รอบสำหรับ cron/launchd + ส่ง LINE (Phase 3)
 ├── AUTORUN.md               # 🆕 คู่มือตั้ง LINE + cron/launchd
+├── SUPABASE.md              # 🆕 คู่มือ Supabase + login + ใช้บนมือถือ
 ├── templates/ , static/     # 🆕 หน้า dashboard (HTML/CSS/JS) ธีมดำ-ส้ม / ขาว-ส้ม
 ├── config.example.yaml      # 🆕 ตัวอย่าง config (คัดลอกเป็น config.yaml)
 ├── .env.example             # 🆕 ตัวอย่างใส่ของลับ (oauth/client_id)
@@ -81,6 +85,9 @@ python3 app.py
 มีปุ่มสลับธีม **ดำ-ส้ม / ขาว-ส้ม** และ **demo mode** (ลองได้เลยไม่ต้องต่อเน็ต)
 
 > 🌐 อยากเปิดเป็น **URL จริง** (Render / Hugging Face Spaces / Fly.io)? ดู **[DEPLOY.md](DEPLOY.md)** — มี `Procfile` / `render.yaml` / `Dockerfile` เตรียมไว้ให้แล้ว
+>
+> 🔐📱 อยากมี **login + เก็บข้อมูลถาวร (Supabase) + ใช้บนมือถือ (PWA)**? ดู **[SUPABASE.md](SUPABASE.md)**
+> ตั้ง `APP_PASSWORD` = มีหน้า login · ตั้ง `SUPABASE_URL`+`SUPABASE_KEY` = seen/feedback ไม่หายตอน restart + sync ข้ามอุปกรณ์ · เปิดบนมือถือกด **Add to Home Screen** ได้เลย
 
 ### B) CLI
 

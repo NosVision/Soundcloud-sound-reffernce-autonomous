@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#ff5a1f">
+  <title>เข้าสู่ระบบ · SC Reference Finder</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body data-theme="dark">
+  <div class="login-wrap">
+    <form class="login-card" method="POST" action="{{ url_for('login') }}">
+      <div class="logo">🎧</div>
+      <h1>SC Reference Finder</h1>
+      <p class="sub">ใส่รหัสผ่านเพื่อเข้าใช้งาน</p>
+      <input name="password" type="password" placeholder="รหัสผ่าน" autofocus
+             autocomplete="current-password">
+      {% if err %}<div class="login-err">{{ err }}</div>{% endif %}
+      <button type="submit" class="run">เข้าสู่ระบบ</button>
+    </form>
+  </div>
+</body>
+</html>
