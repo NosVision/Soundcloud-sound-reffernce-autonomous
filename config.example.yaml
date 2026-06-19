@@ -1,0 +1,44 @@
+# ===== SoundCloud Reference Finder — config =====
+# คัดลอกไฟล์นี้เป็น config.yaml แล้วแก้ค่าตามต้องการ
+#   cp config.example.yaml config.yaml
+# ของลับ (oauth/client_id) แนะนำใส่ใน .env แทน (ดู .env.example)
+
+# profile ของเรา (ใช้เมื่อ seed_mode = likes / both)
+profile_url: "https://soundcloud.com/YOUR-HANDLE"
+
+# วิธีเลือก seed:
+#   urls  = ใช้ลิงก์เพลงที่ชอบด้านล่าง  (ไม่ต้องมี likes/login)
+#   likes = ดึง likes ล่าสุดจาก profile
+#   both  = ใช้ทั้งสองรวมกัน
+seed_mode: "urls"
+
+# ลิงก์เพลงตัวอย่างที่ชอบ (วางได้หลายอัน) — ใช้เป็น seed
+seed_urls:
+  - "https://soundcloud.com/esentrik/nokia-edit"
+  - "https://soundcloud.com/nightdrive/come-thru-edit"
+  # - "https://soundcloud.com/..."
+
+max_seeds: 60           # ดึง likes ล่าสุดกี่เพลง (เมื่อ seed_mode มี likes)
+target: 120             # จำนวนเพลงใน output
+related_per_seed: 50     # related สูงสุดต่อ 1 seed
+sleep: 0.4              # หน่วงกัน rate limit (อย่าต่ำกว่า 0.3)
+
+# filter ความยาว (นาที) — 0 = ไม่จำกัด (เช่นเอา 2–5 นาทีเหมาะกับ vlog BGM)
+duration:
+  min_minutes: 0
+  max_minutes: 0
+
+# dedupe ข้ามรอบ: เพลงที่เคยเสนอแล้วจะไม่โผล่ซ้ำรอบหน้า
+dedupe:
+  enabled: true
+  seen_file: "seen.json"
+
+# ของลับ — ปล่อยว่างได้ ถ้าใส่แนะนำผ่าน .env แทน
+auth:
+  oauth_token: ""         # ใส่ถ้า likes เป็น private
+  client_id_override: ""  # ใส่ถ้า auto หา client_id ไม่เจอ
+
+output: "sc_references.csv"
+
+# True = ใช้ข้อมูลปลอม (ไม่ต่อเน็ต) ไว้ลอง dashboard — รันจริงตั้งเป็น false
+demo_mode: false

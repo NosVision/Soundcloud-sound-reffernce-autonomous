@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SC Reference Finder — Dashboard</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body data-theme="dark">
+  <header>
+    <div class="brand">
+      <div class="logo">🎧</div>
+      <div>
+        <h1>SC Reference Finder</h1>
+        <p class="sub">หา reference เพลงตรงแนวที่ชอบจาก SoundCloud — likes / ลิงก์เพลง → related → จัดอันดับด้วย co-occurrence</p>
+      </div>
+    </div>
+    <button id="themeBtn" class="theme-btn">☀️ ขาว-ส้ม</button>
+  </header>
+
+  <main>
+    <section class="panel controls">
+      <h2>1 · ใส่เพลงที่ชอบ (seed)</h2>
+
+      <label>วิธีเลือก seed</label>
+      <div class="seg" id="seedMode">
+        <button data-mode="urls"  class="active">ลิงก์เพลง</button>
+        <button data-mode="likes">likes ของ profile</button>
+        <button data-mode="both">ทั้งสอง</button>
+      </div>
+
+      <div id="urlsBox">
+        <label>วางลิงก์ SoundCloud (เพลงที่ชอบ) — บรรทัดละ 1 ลิงก์</label>
+        <textarea id="seed_urls" rows="5"
+          placeholder="https://soundcloud.com/artist/track-1&#10;https://soundcloud.com/artist/track-2">{{ "\n".join(cfg.seed_urls) }}</textarea>
+        <small>เพลงพวกนี้คือ “รสนิยม” ที่ใช้เป็นต้นทาง ยิ่งใส่หลากหลายในแนวเดียวกัน ผลยิ่งตรง</small>
+      </div>
+
+      <div id="profileBox" class="hidden">
+        <label>Profile URL ของคุณ</label>
+        <input id="profile_url" type="text" value="{{ cfg.profile_url }}"
+               placeholder="https://soundcloud.com/your-handle">
+      </div>
+
+      <h2>2 · ตั้งค่า</h2>
+      <div class="grid">
+        <div><label>max seeds</label><input id="max_seeds" type="number" value="{{ cfg.max_seeds }}"></div>
+        <div><label>target (จำนวนผล)</label><input id="target" type="number" value="{{ cfg.target }}"></div>
+        <div><label>related/seed</label><input id="related_per_seed" type="number" value="{{ cfg.related_per_seed }}"></div>
+        <div><label>ยาวขั้นต่ำ (นาที)</label><input id="duration_min" type="number" step="0.5" value="{{ cfg.duration_min }}"></div>
+        <div><label>ยาวสูงสุด (นาที)</label><input id="duration_max" type="number" step="0.5" value="{{ cfg.duration_max }}"></div>
+      </div>
+
+      <div class="toggles">
+        <label class="chk"><input id="dedupe_enabled" type="checkbox" {% if cfg.dedupe_enabled %}checked{% endif %}> dedupe ข้ามรอบ (ไม่เสนอซ้ำ)</label>
+        <label class="chk"><input id="demo_mode" type="checkbox" {% if cfg.demo_mode %}checked{% endif %}> demo mode (ไม่ต่อเน็ต — ลองได้เลย)</label>
+      </div>
+
+      <button id="runBtn" class="run">▶ Run</button>
+      <div id="status" class="status"></div>
+    </section>
+
+    <section class="panel results">
+      <div class="results-head">
+        <h2>ผลลัพธ์</h2>
+        <div>
+          <input id="filterText" placeholder="กรองชื่อ/ศิลปิน…" class="filter">
+          <a id="dlBtn" href="/download" class="dl hidden">⬇ CSV</a>
+        </div>
+      </div>
+      <div id="empty" class="empty">ยังไม่มีผล — ใส่ลิงก์แล้วกด Run (ลองเปิด demo mode ดูก่อนได้)</div>
+      <div class="table-wrap">
+        <table id="tbl" class="hidden">
+          <thead>
+            <tr>
+              <th data-k="rank">#</th>
+              <th data-k="matched_seeds">matched_seeds ▼</th>
+              <th data-k="title">title</th>
+              <th data-k="artist">artist</th>
+              <th data-k="genre">genre</th>
+              <th data-k="plays">plays</th>
+              <th data-k="likes">likes</th>
+              <th data-k="duration_min">min</th>
+              <th>link</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <details class="logs"><summary>log การทำงาน</summary><pre id="log"></pre></details>
+    </section>
+  </main>
+
+  <script src="{{ url_for('static', filename='app.js') }}"></script>
+</body>
+</html>

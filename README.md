@@ -27,12 +27,23 @@ Slow Grind NIE Remix, YO-ZU edit ฯลฯ) เพลงพวกนี้ **ไ
 
 ---
 
-## โครงสร้าง
+## โครงสร้าง (หลัง Phase 1)
 
 ```
 .
-├── sc_reference_finder.py   # ตัวหลัก: likes → related → rank → CSV
-├── README.md                # ไฟล์นี้
+├── app.py                   # 🆕 Dashboard เว็บ (Flask) — วางลิงก์/ปรับ config/กด Run/โหลด CSV
+├── sc_reference_finder.py   # CLI: อ่าน config.yaml -> รัน pipeline -> CSV
+├── scfinder/                # 🆕 core package
+│   ├── config.py            #   โหลด config.yaml + .env / env override
+│   ├── client.py            #   SoundCloud api-v2 client (read-only + backoff)
+│   ├── mockclient.py        #   client ปลอม (demo/offline ไม่ต่อเน็ต)
+│   ├── store.py             #   dedupe ข้ามรอบ (seen.json)
+│   └── finder.py            #   pipeline: seeds -> related -> co-occurrence rank
+├── templates/ , static/     # 🆕 หน้า dashboard (HTML/CSS/JS) ธีมดำ-ส้ม / ขาว-ส้ม
+├── config.example.yaml      # 🆕 ตัวอย่าง config (คัดลอกเป็น config.yaml)
+├── .env.example             # 🆕 ตัวอย่างใส่ของลับ (oauth/client_id)
+├── requirements.txt         # 🆕 requests / PyYAML / Flask
+├── tests/test_finder.py     # 🆕 เทสต์ pipeline (offline)
 └── sc_references.csv         # output (ถูกสร้างหลังรัน)
 ```
 
@@ -40,27 +51,61 @@ Slow Grind NIE Remix, YO-ZU edit ฯลฯ) เพลงพวกนี้ **ไ
 
 ## การใช้งาน
 
+### ติดตั้ง + ตั้งค่า (ครั้งแรก)
+
 ```bash
-pip install requests
-# แก้ PROFILE_URL ใน sc_reference_finder.py เป็น profile ตัวเอง
-python3 sc_reference_finder.py
+pip install -r requirements.txt
+cp config.example.yaml config.yaml      # แล้วแก้ค่าในนี้
+# (ถ้ามีของลับ) cp .env.example .env แล้วใส่ SC_OAUTH_TOKEN / SC_CLIENT_ID
+```
+
+ใน `config.yaml` เลือก seed ได้ 3 แบบ:
+- `seed_mode: urls` → วาง **ลิงก์เพลงที่ชอบ** ใน `seed_urls` (ไม่ต้อง login)
+- `seed_mode: likes` → ดึง likes จาก `profile_url`
+- `seed_mode: both` → ใช้ทั้งคู่
+
+### A) Dashboard เว็บ (แนะนำ) 🆕
+
+```bash
+python3 app.py
+# เปิด http://127.0.0.1:5000
+```
+วางลิงก์เพลงที่ชอบ → ปรับ config → กด **Run** → ได้ตารางเรียงตาม `matched_seeds` → กด **⬇ CSV**
+มีปุ่มสลับธีม **ดำ-ส้ม / ขาว-ส้ม** และ **demo mode** (ลองได้เลยไม่ต้องต่อเน็ต)
+
+### B) CLI
+
+```bash
+python3 sc_reference_finder.py     # อ่าน config.yaml -> sc_references.csv
 ```
 
 ได้ `sc_references.csv` → เปิดใน Sheets / Obsidian → เรียงตาม `matched_seeds` → คัด 100 ตัวบน
 
-### Config ที่ปรับได้ (ในไฟล์ .py)
+### ลองแบบ offline / รันเทสต์
 
-| ตัวแปร | ความหมาย | ค่า default |
+```bash
+python3 test_offline.py        # demo: mock data -> ตัวอย่างผลลัพธ์
+python3 tests/test_finder.py   # เทสต์ pipeline (co-occurrence/filter/dedupe/CSV)
+```
+
+### Config ที่ปรับได้ (ใน `config.yaml`)
+
+| key | ความหมาย | default |
 |---|---|---|
-| `PROFILE_URL` | profile SoundCloud ของเรา | ต้องใส่เอง |
-| `MAX_SEEDS` | ดึง likes ล่าสุดกี่เพลงมาเป็น seed | 60 |
-| `TARGET` | จำนวนเพลงใน output (ดึงเผื่อ) | 120 |
-| `RELATED_PER_SEED` | related สูงสุดต่อ 1 seed | 50 |
-| `SLEEP` | หน่วงกัน rate limit (วินาที) | 0.4 |
-| `OAUTH_TOKEN` | ใส่ถ้า likes เป็น private | ว่าง |
-| `CLIENT_ID_OVERRIDE` | ใส่ถ้า auto หา client_id ไม่เจอ | ว่าง |
+| `profile_url` | profile SoundCloud (เมื่อใช้ likes) | ต้องใส่เอง |
+| `seed_mode` | `urls` / `likes` / `both` | `urls` |
+| `seed_urls` | ลิงก์เพลงที่ชอบ (seed) | `[]` |
+| `max_seeds` | ดึง likes ล่าสุดกี่เพลง | 60 |
+| `target` | จำนวนเพลงใน output | 120 |
+| `related_per_seed` | related สูงสุดต่อ 1 seed | 50 |
+| `sleep` | หน่วงกัน rate limit (วินาที) | 0.4 |
+| `duration.min_minutes` / `max_minutes` | filter ความยาว (0 = ไม่จำกัด) | 0 / 0 |
+| `dedupe.enabled` / `seen_file` | dedupe ข้ามรอบ | true / `seen.json` |
+| `auth.oauth_token` | ใส่ถ้า likes private (หรือผ่าน `.env`) | ว่าง |
+| `auth.client_id_override` | ใส่ถ้า auto หา client_id ไม่เจอ | ว่าง |
+| `demo_mode` | ใช้ข้อมูลปลอม (ไม่ต่อเน็ต) | false |
 
-> ทำไม `MAX_SEEDS` ไม่เอา likes ทั้งหมด: เรามี ~1,745 likes ถ้า seed หมดจะยิง API หลายพันครั้ง
+> ทำไม `max_seeds` ไม่เอา likes ทั้งหมด: เรามี ~1,745 likes ถ้า seed หมดจะยิง API หลายพันครั้ง
 > = ช้า + เสี่ยงโดน rate limit แบน. likes ล่าสุด 60–80 = รสนิยมปัจจุบัน กำลังพอดี
 
 ---
@@ -105,11 +150,13 @@ seeds[] ──┬─ /tracks/{id}/related ──► candidates
 
 สิ่งที่อยากให้ build ต่อ (เรียงตาม priority):
 
-### Phase 1 — ทำให้ใช้จริงสะดวกขึ้น
-- [ ] แยก config ออกมาเป็น `.env` / `config.yaml` ไม่ต้องแก้ในโค้ด
-- [ ] **dedupe ข้ามรอบ**: เก็บ track id ที่เคยเห็นใน `seen.json` → รอบหน้าไม่เสนอซ้ำ
-- [ ] เพิ่ม seed source แบบเลือกได้: `likes` / `playlist` / `station` / `genre tag`
-- [ ] filter ความยาว (เช่นเอาเฉพาะ 2–5 นาที เหมาะกับ vlog BGM)
+### Phase 1 — ทำให้ใช้จริงสะดวกขึ้น ✅ (เสร็จแล้ว)
+- [x] แยก config ออกมาเป็น `.env` / `config.yaml` ไม่ต้องแก้ในโค้ด
+- [x] **dedupe ข้ามรอบ**: เก็บ track id ที่เคยเห็นใน `seen.json` → รอบหน้าไม่เสนอซ้ำ
+- [x] เพิ่ม seed source แบบเลือกได้: `likes` / `urls (ลิงก์เพลงที่ชอบ)` / `both`
+      _(playlist / station / genre tag ต่อยอดได้ใน client.py)_
+- [x] filter ความยาว (เช่นเอาเฉพาะ 2–5 นาที เหมาะกับ vlog BGM)
+- [x] 🆕 **Dashboard เว็บ** (`app.py`) ธีมดำ-ส้ม / ขาว-ส้ม + demo mode + เทสต์ offline
 
 ### Phase 2 — Enrichment (ของที่เราใช้จริงตอน mix)
 - [ ] **ดึง BPM + key** ต่อเพลง (ผ่าน GetSongBPM / Tunebat / วิเคราะห์เองด้วย librosa)
