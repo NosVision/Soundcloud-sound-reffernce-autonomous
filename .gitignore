@@ -1,0 +1,5 @@
+__pycache__/
+*.pyc
+sc_references.csv
+test_output.csv
+.env
