@@ -15,6 +15,7 @@ import sys
 
 from scfinder import load_config, find_references, SeenStore
 from scfinder.finder import write_csv
+from scfinder.export import to_mixedinkey_csv, to_m3u8
 from scfinder.client import SoundCloudClient, SoundCloudError
 from scfinder.mockclient import MockClient
 
@@ -43,9 +44,15 @@ def main():
         sys.exit(str(e))
 
     write_csv(results, cfg.output)
+    # export เพิ่ม: พร้อมเข้า Mixed In Key / player
+    with open("sc_references_mixedinkey.csv", "w", encoding="utf-8") as f:
+        f.write(to_mixedinkey_csv(results))
+    with open("sc_references.m3u8", "w", encoding="utf-8") as f:
+        f.write(to_m3u8(results))
     store.save()
 
     print(f"\nเสร็จ -> {cfg.output} ({len(results)} เพลง)")
+    print("           sc_references_mixedinkey.csv (Key=Camelot) / sc_references.m3u8")
     print("matched_seeds สูง = โผล่ซ้ำหลาย seed = ตรงแนวสุด คัด 100 ตัวบนได้เลย")
 
 

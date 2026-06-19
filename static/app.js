@@ -4,8 +4,41 @@ let MODE = "urls";
 let ROWS = [];
 let sortKey = "matched_seeds";
 let sortDir = -1;
+let HARMONIC = false;     // โหมดเรียงลำดับ mix ต่อกัน
+let CAM_FILTER = "";      // กรองเฉพาะ key ที่เข้ากับ Camelot นี้
 
 const $ = (id) => document.getElementById(id);
+
+// ---- Camelot harmonic logic (ตรงกับ scfinder/camelot.py) ----
+function compatibleCamelot(code) {
+  const m = /^(\d{1,2})([AB])$/.exec(code || "");
+  if (!m) return [];
+  const n = +m[1], l = m[2];
+  if (n < 1 || n > 12) return [];
+  const other = l === "A" ? "B" : "A";
+  const up = (n % 12) + 1, down = ((n - 2 + 12) % 12) + 1;
+  return [`${n}${l}`, `${n}${other}`, `${up}${l}`, `${down}${l}`];
+}
+function isCompatible(a, b) { return !!a && compatibleCamelot(a).includes(b); }
+
+// เรียงแบบ greedy nearest-harmonic (พอร์ตจาก mixset.py) ไว้ดูลำดับ mix
+function harmonicOrder(rows) {
+  const pool = rows.slice();
+  if (!pool.length) return pool;
+  const gap = (a, b) => (!a.bpm || !b.bpm ? 999 : Math.abs(a.bpm - b.bpm));
+  const out = [pool.shift()];
+  while (pool.length) {
+    const cur = out[out.length - 1];
+    const compat = new Set(cur.camelot ? compatibleCamelot(cur.camelot) : []);
+    let cand = pool.filter((t) => t.camelot && compat.has(t.camelot));
+    if (!cand.length) cand = pool;
+    let best = cand[0];
+    for (const t of cand) if (gap(cur, t) < gap(cur, best)) best = t;
+    pool.splice(pool.indexOf(best), 1);
+    out.push(best);
+  }
+  return out;
+}
 
 // ---- theme toggle (ดำ-ส้ม / ขาว-ส้ม) ----
 const themeBtn = $("themeBtn");
@@ -46,6 +79,8 @@ async function run() {
     related_per_seed: $("related_per_seed").value,
     duration_min: $("duration_min").value,
     duration_max: $("duration_max").value,
+    bpm_min: $("bpm_min").value,
+    bpm_max: $("bpm_max").value,
     dedupe_enabled: $("dedupe_enabled").checked,
     demo_mode: $("demo_mode").checked,
   };
@@ -63,10 +98,13 @@ async function run() {
     }
     ROWS = data.results || [];
     sortKey = "matched_seeds"; sortDir = -1;
+    HARMONIC = false; CAM_FILTER = "";
     render();
     const demo = data.demo ? '<span class="badge">DEMO</span>' : "";
     $("status").innerHTML = `✅ ได้ ${data.count} เพลง ` + demo;
-    $("dlBtn").classList.toggle("hidden", ROWS.length === 0);
+    const has = ROWS.length > 0;
+    ["dlBtn", "dlMik", "dlM3u", "harmonicBtn"].forEach((id) =>
+      $(id).classList.toggle("hidden", !has));
   } catch (e) {
     $("status").textContent = "❌ " + e;
   } finally {
@@ -86,26 +124,52 @@ document.querySelectorAll("#tbl th[data-k]").forEach((th) => {
 
 $("filterText").addEventListener("input", render);
 
+$("harmonicBtn").addEventListener("click", () => {
+  HARMONIC = !HARMONIC;
+  $("harmonicBtn").classList.toggle("on", HARMONIC);
+  render();
+});
+
+$("camChip").addEventListener("click", () => { CAM_FILTER = ""; render(); });
+
 function render() {
   const q = $("filterText").value.trim().toLowerCase();
   let rows = ROWS.filter((r) =>
     !q || (r.title || "").toLowerCase().includes(q) || (r.artist || "").toLowerCase().includes(q));
 
-  rows.sort((a, b) => {
-    const x = a[sortKey], y = b[sortKey];
-    if (typeof x === "number" && typeof y === "number") return (x - y) * sortDir;
-    return String(x).localeCompare(String(y)) * sortDir;
-  });
+  // กรอง harmonic ตาม Camelot ที่คลิก
+  if (CAM_FILTER) rows = rows.filter((r) => isCompatible(CAM_FILTER, r.camelot));
+
+  if (HARMONIC) {
+    rows = harmonicOrder(rows);          // ลำดับ mix ต่อกัน
+  } else {
+    rows.sort((a, b) => {
+      const x = a[sortKey], y = b[sortKey];
+      if (typeof x === "number" && typeof y === "number") return (x - y) * sortDir;
+      return String(x).localeCompare(String(y)) * sortDir;
+    });
+  }
+
+  // chip แสดงตัวกรอง Camelot
+  const chip = $("camChip");
+  chip.classList.toggle("hidden", !CAM_FILTER);
+  if (CAM_FILTER) chip.textContent = `🎚 key เข้ากับ ${CAM_FILTER} ✕`;
 
   const maxMs = Math.max(1, ...ROWS.map((r) => r.matched_seeds || 0));
   const tb = $("tbl").querySelector("tbody");
   tb.innerHTML = rows.map((r, i) => {
     const w = Math.round(((r.matched_seeds || 0) / maxMs) * 60);
+    const cam = r.camelot
+      ? `<span class="cam" data-cam="${r.camelot}" title="คลิกเพื่อกรองเพลงที่ mix เข้ากัน">${r.camelot}</span>`
+      : `<span class="cam none">–</span>`;
+    const key = r.key ? ` <small>${esc(r.key)}</small>` : "";
     return `<tr>
       <td>${i + 1}</td>
       <td><span class="ms">${r.matched_seeds}</span><span class="bar" style="width:${w}px"></span></td>
       <td>${esc(r.title)}</td>
       <td>${esc(r.artist)}</td>
+      <td>${r.bpm ? r.bpm : "–"}</td>
+      <td>${cam}${key}</td>
       <td>${esc(r.genre)}</td>
       <td>${fmt(r.plays)}</td>
       <td>${fmt(r.likes)}</td>
@@ -114,12 +178,15 @@ function render() {
     </tr>`;
   }).join("");
 
+  // คลิก Camelot -> กรองเพลงที่ mix เข้ากัน
+  tb.querySelectorAll(".cam[data-cam]").forEach((el) =>
+    el.addEventListener("click", () => { CAM_FILTER = el.dataset.cam; HARMONIC = false; render(); }));
+
   $("tbl").classList.toggle("hidden", rows.length === 0);
   $("empty").classList.toggle("hidden", rows.length !== 0);
   document.querySelectorAll("#tbl th[data-k]").forEach((th) => {
-    const base = th.dataset.k === "matched_seeds" ? "matched_seeds" : th.textContent.replace(/[ ▲▼]+$/,"");
-    th.textContent = th.dataset.k + (th.dataset.k === sortKey ? (sortDir < 0 ? " ▼" : " ▲") : "");
-    if (th.dataset.k === "rank") th.textContent = "#";
+    th.textContent = th.dataset.k === "rank" ? "#"
+      : th.dataset.k + (!HARMONIC && th.dataset.k === sortKey ? (sortDir < 0 ? " ▼" : " ▲") : "");
   });
 }
 

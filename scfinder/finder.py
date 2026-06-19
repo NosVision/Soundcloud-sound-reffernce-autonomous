@@ -13,6 +13,7 @@ from dataclasses import dataclass
 from typing import Callable, List, Optional
 
 from .store import SeenStore
+from .camelot import to_camelot
 
 
 @dataclass
@@ -22,6 +23,9 @@ class Result:
     title: str
     artist: str
     genre: str
+    bpm: float
+    key: str
+    camelot: str
     plays: int
     likes: int
     duration_min: float
@@ -30,15 +34,30 @@ class Result:
 
     def as_row(self) -> list:
         return [self.rank, self.matched_seeds, self.title, self.artist,
-                self.genre, self.plays, self.likes, self.duration_min, self.url]
+                self.genre, self.bpm, self.key, self.camelot,
+                self.plays, self.likes, self.duration_min, self.url]
 
 
-COLUMNS = ["rank", "matched_seeds", "title", "artist",
-           "genre", "plays", "likes", "duration_min", "url"]
+COLUMNS = ["rank", "matched_seeds", "title", "artist", "genre",
+           "bpm", "key", "camelot", "plays", "likes", "duration_min", "url"]
 
 
 def _dur_min(track: dict) -> float:
     return round((track.get("duration", 0) or 0) / 60000, 1)
+
+
+def _bpm(track: dict) -> float:
+    """ดึง BPM จาก metadata ของ SC (uploader ใส่มา) — 0 ถ้าไม่มี"""
+    raw = track.get("bpm")
+    try:
+        return round(float(raw), 1) if raw else 0.0
+    except (TypeError, ValueError):
+        return 0.0
+
+
+def _key(track: dict) -> str:
+    """ดึง key signature จาก metadata ของ SC — '' ถ้าไม่มี"""
+    return str(track.get("key_signature") or "").strip()
 
 
 def build_seeds(client, cfg, log: Callable[[str], None]) -> list:
@@ -105,6 +124,18 @@ def find_references(client, cfg, store: Optional[SeenStore] = None,
         log(f"filter ความยาว {dmin or '-'}–{dmax or '-'} นาที: "
             f"{before} -> {len(pool)} เพลง")
 
+    # ---- filter BPM (เฉพาะเพลงที่มี BPM ในข้อมูล) ----
+    bmin, bmax = cfg.bpm_min, cfg.bpm_max
+    if bmin or bmax:
+        before = len(pool)
+        for tid in list(pool):
+            b = _bpm(pool[tid])
+            if b == 0:                       # ไม่มี BPM -> เก็บไว้ (อย่าตัดทิ้งมั่ว)
+                continue
+            if (bmin and b < bmin) or (bmax and b > bmax):
+                pool.pop(tid)
+        log(f"filter BPM {bmin or '-'}–{bmax or '-'}: {before} -> {len(pool)} เพลง")
+
     # ---- dedupe ข้ามรอบ ----
     if store and store.enabled:
         before = len(pool)
@@ -121,12 +152,16 @@ def find_references(client, cfg, store: Optional[SeenStore] = None,
 
     results = []
     for i, t in enumerate(ranked, 1):
+        key = _key(t)
         results.append(Result(
             rank=i,
             matched_seeds=hits.get(t["id"], 0),
             title=t.get("title", ""),
             artist=(t.get("user") or {}).get("username", ""),
             genre=t.get("genre", ""),
+            bpm=_bpm(t),
+            key=key,
+            camelot=to_camelot(key),
             plays=t.get("playback_count", 0) or 0,
             likes=t.get("likes_count", 0) or 0,
             duration_min=_dur_min(t),
@@ -146,3 +181,23 @@ def write_csv(results: List[Result], path: str) -> None:
         w.writerow(COLUMNS)
         for r in results:
             w.writerow(r.as_row())
+
+
+def group_by_bpm(results: List[Result], width: int = 10) -> dict:
+    """จัดกลุ่มตามช่วง BPM (เช่น 120–129) -> {'120-129': [Result,...]}; 'no-bpm' สำหรับเพลงไม่มี BPM"""
+    groups: dict = {}
+    for r in results:
+        if not r.bpm:
+            groups.setdefault("no-bpm", []).append(r)
+            continue
+        lo = int(r.bpm // width) * width
+        groups.setdefault(f"{lo}-{lo + width - 1}", []).append(r)
+    return groups
+
+
+def group_by_camelot(results: List[Result]) -> dict:
+    """จัดกลุ่มตาม Camelot code -> {'8A': [Result,...]}; 'no-key' สำหรับเพลงไม่มีคีย์"""
+    groups: dict = {}
+    for r in results:
+        groups.setdefault(r.camelot or "no-key", []).append(r)
+    return groups

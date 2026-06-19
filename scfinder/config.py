@@ -30,6 +30,7 @@ DEFAULTS = {
     "related_per_seed": 50,
     "sleep": 0.4,
     "duration": {"min_minutes": 0, "max_minutes": 0},   # 0 = ไม่จำกัด
+    "bpm": {"min": 0, "max": 0},                         # 0 = ไม่จำกัด (Phase 2)
     "dedupe": {"enabled": True, "seen_file": "seen.json"},
     "auth": {"oauth_token": "", "client_id_override": ""},
     "output": "sc_references.csv",
@@ -48,6 +49,8 @@ class Config:
     sleep: float = DEFAULTS["sleep"]
     duration_min: float = 0.0     # นาที, 0 = ไม่จำกัด
     duration_max: float = 0.0     # นาที, 0 = ไม่จำกัด
+    bpm_min: float = 0.0          # 0 = ไม่จำกัด
+    bpm_max: float = 0.0          # 0 = ไม่จำกัด
     dedupe_enabled: bool = True
     seen_file: str = "seen.json"
     oauth_token: str = ""
@@ -88,6 +91,7 @@ def load_config(path: str = "config.yaml") -> Config:
         _deep_update(data, loaded)
 
     dur = data.get("duration") or {}
+    bpm = data.get("bpm") or {}
     dedupe = data.get("dedupe") or {}
     auth = data.get("auth") or {}
 
@@ -101,6 +105,8 @@ def load_config(path: str = "config.yaml") -> Config:
         sleep=float(data["sleep"]),
         duration_min=float(dur.get("min_minutes", 0) or 0),
         duration_max=float(dur.get("max_minutes", 0) or 0),
+        bpm_min=float(bpm.get("min", 0) or 0),
+        bpm_max=float(bpm.get("max", 0) or 0),
         dedupe_enabled=bool(dedupe.get("enabled", True)),
         seen_file=str(dedupe.get("seen_file", "seen.json")),
         oauth_token=str(auth.get("oauth_token", "") or ""),

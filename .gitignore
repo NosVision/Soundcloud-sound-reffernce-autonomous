@@ -7,3 +7,6 @@ test_output.csv
 .env
 config.yaml
 seen.json
+sc_references_mixedinkey.csv
+sc_references.m3u8
+sc_references.json

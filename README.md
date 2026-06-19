@@ -38,7 +38,10 @@ Slow Grind NIE Remix, YO-ZU edit ฯลฯ) เพลงพวกนี้ **ไ
 │   ├── client.py            #   SoundCloud api-v2 client (read-only + backoff)
 │   ├── mockclient.py        #   client ปลอม (demo/offline ไม่ต่อเน็ต)
 │   ├── store.py             #   dedupe ข้ามรอบ (seen.json)
-│   └── finder.py            #   pipeline: seeds -> related -> co-occurrence rank
+│   ├── camelot.py           # 🆕 key -> Camelot + หาคีย์ที่ mix เข้ากัน (Phase 2)
+│   ├── mixset.py            # 🆕 เรียงเป็นลำดับ mix ต่อกัน (harmonic set)
+│   ├── export.py            # 🆕 export: Mixed In Key CSV / M3U8 / JSON
+│   └── finder.py            #   pipeline: seeds -> related -> co-occurrence rank (+bpm/key/camelot)
 ├── templates/ , static/     # 🆕 หน้า dashboard (HTML/CSS/JS) ธีมดำ-ส้ม / ขาว-ส้ม
 ├── config.example.yaml      # 🆕 ตัวอย่าง config (คัดลอกเป็น config.yaml)
 ├── .env.example             # 🆕 ตัวอย่างใส่ของลับ (oauth/client_id)
@@ -102,6 +105,7 @@ python3 tests/test_finder.py   # เทสต์ pipeline (co-occurrence/filter/
 | `related_per_seed` | related สูงสุดต่อ 1 seed | 50 |
 | `sleep` | หน่วงกัน rate limit (วินาที) | 0.4 |
 | `duration.min_minutes` / `max_minutes` | filter ความยาว (0 = ไม่จำกัด) | 0 / 0 |
+| `bpm.min` / `bpm.max` | filter BPM (0 = ไม่จำกัด) — Phase 2 | 0 / 0 |
 | `dedupe.enabled` / `seen_file` | dedupe ข้ามรอบ | true / `seen.json` |
 | `auth.oauth_token` | ใส่ถ้า likes private (หรือผ่าน `.env`) | ว่าง |
 | `auth.client_id_override` | ใส่ถ้า auto หา client_id ไม่เจอ | ว่าง |
@@ -119,10 +123,39 @@ python3 tests/test_finder.py   # เทสต์ pipeline (co-occurrence/filter/
 | `rank` | อันดับ |
 | `matched_seeds` | โผล่ใน related ของกี่ seed (**ตัวชี้วัดหลัก** — สูง = ตรงแนวสุด) |
 | `title` / `artist` | ชื่อเพลง / คนทำ |
+| `bpm` | BPM (จาก metadata ของ uploader — Phase 2) |
+| `key` | คีย์ดนตรี (ดิบจาก SC) |
+| `camelot` | คีย์แบบ Camelot wheel (เช่น `8A`) — ภาษาเดียวกับ Mixed In Key |
 | `genre` | แนว (ตามที่ uploader ใส่ — ไม่ค่อยน่าเชื่อถือ) |
 | `plays` / `likes` | ยอดเล่น / ยอดไลก์ |
 | `duration_min` | ความยาว (นาที) |
 | `url` | ลิงก์ SoundCloud |
+
+---
+
+## 🎚️ Harmonic mixing / ต่อยอด Mixed In Key (Phase 2)
+
+ทุกเพลงถูก enrich **BPM + key → Camelot code** อัตโนมัติ (BPM/key มาจาก metadata ที่ uploader ใส่บน SC)
+แล้วเอาไปใช้มิกซ์ต่อได้ทันที:
+
+**บน Dashboard**
+- คอลัมน์ `bpm` / `key (Camelot)` ในตาราง — กรองด้วยช่อง **BPM ขั้นต่ำ/สูงสุด**
+- **คลิกที่ Camelot badge** (เช่น `8A`) → กรองเหลือเฉพาะเพลงที่ mix เข้ากันได้ (harmonic)
+- ปุ่ม **🎚 Harmonic order** → เรียงผลเป็น "ลำดับที่ mix ต่อกันลื่นที่สุด" (Camelot + BPM ใกล้)
+- ปุ่ม export: **⬇ CSV**, **⬇ Mixed In Key** (Key=Camelot), **⬇ M3U8** (playlist)
+
+**ฟอร์แมต export** (CLI สร้างให้อัตโนมัติ + Dashboard มีปุ่ม)
+| ไฟล์ | เอาไปใช้ |
+|---|---|
+| `sc_references.csv` | ตารางเต็ม (มี bpm/key/camelot) |
+| `sc_references_mixedinkey.csv` | หัวตารางแนว Mixed In Key (Artist/Title/**Key=Camelot**/BPM/Energy) |
+| `sc_references.m3u8` | playlist ลิงก์ SoundCloud เปิดต่อใน player |
+
+**Camelot rule (harmonic):** เข้ากันได้ = เลขเดียวกัน (สลับ A/B) หรือเลข ±1 ตัวอักษรเดิม
+โค้ดอยู่ที่ `scfinder/camelot.py` (แปลงคีย์) + `scfinder/mixset.py` (เรียงลำดับมิกซ์) + `scfinder/export.py` (ฟอร์แมต)
+
+> หมายเหตุ: บางเพลงบน SC ไม่มี BPM/key ใน metadata → คอลัมน์จะว่าง (ไม่ถูกตัดทิ้ง)
+> อยากได้ครบทุกเพลง: Phase 2 ต่อไปคือต่อ GetSongBPM / Tunebat / วิเคราะห์เองด้วย librosa (hook เตรียมไว้ใน `client.py`)
 
 ---
 
@@ -160,10 +193,11 @@ seeds[] ──┬─ /tracks/{id}/related ──► candidates
 - [x] filter ความยาว (เช่นเอาเฉพาะ 2–5 นาที เหมาะกับ vlog BGM)
 - [x] 🆕 **Dashboard เว็บ** (`app.py`) ธีมดำ-ส้ม / ขาว-ส้ม + demo mode + เทสต์ offline
 
-### Phase 2 — Enrichment (ของที่เราใช้จริงตอน mix)
-- [ ] **ดึง BPM + key** ต่อเพลง (ผ่าน GetSongBPM / Tunebat / วิเคราะห์เองด้วย librosa)
-      → เพิ่มคอลัมน์ `bpm`, `key` ใน CSV เพื่อคัดเพลงที่ mix เข้ากันได้เลย
-- [ ] จัดกลุ่มผลลัพธ์ตาม BPM range / camelot wheel (compatible keys)
+### Phase 2 — Enrichment (ของที่เราใช้จริงตอน mix) ✅ (เสร็จแล้ว)
+- [x] **ดึง BPM + key** ต่อเพลง (จาก metadata SC) → คอลัมน์ `bpm`, `key`, `camelot` ใน CSV
+      _(ต่อ GetSongBPM / Tunebat / librosa สำหรับเพลงที่ไม่มี metadata = งานต่อยอด)_
+- [x] จัดกลุ่ม/กรองตาม BPM range + Camelot wheel (compatible keys) — `camelot.py`, `mixset.py`
+- [x] 🆕 **Mixed In Key integration**: export Camelot CSV / M3U8, ปุ่ม harmonic order + คลิก key กรองเพลงที่ mix เข้ากัน
 
 ### Phase 3 — Autonomous loop
 - [ ] รันเป็น cron / launchd บน Mac Mini (เช่นทุกวันจันทร์เช้า)

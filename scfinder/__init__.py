@@ -12,3 +12,5 @@ scfinder — SoundCloud reference finder (Phase 1)
 from .config import Config, load_config            # noqa: F401
 from .finder import find_references, Result         # noqa: F401
 from .store import SeenStore                        # noqa: F401
+from .camelot import to_camelot, compatible_camelot  # noqa: F401
+from .mixset import build_harmonic_set              # noqa: F401

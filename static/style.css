@@ -84,3 +84,18 @@ td a:hover{text-decoration:underline}
 pre{background:var(--panel2);padding:12px;border-radius:12px;font-size:11px;overflow:auto;color:var(--mut);margin-top:8px}
 .badge{display:inline-block;background:var(--grad);color:#fff;font-size:11px;font-weight:800;
   padding:3px 11px;border-radius:30px;margin-left:8px;box-shadow:0 4px 12px rgba(255,77,13,.35)}
+
+/* ---- Phase 2: Camelot / mix ---- */
+.actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.cam{display:inline-block;min-width:34px;text-align:center;background:var(--panel);border:1px solid var(--acc);
+  color:var(--acc);font-weight:800;font-size:12px;padding:2px 8px;border-radius:8px;cursor:pointer}
+.cam:hover{background:var(--acc);color:#fff}
+.cam.none{border-color:var(--line);color:var(--mut);cursor:default}
+td small{color:var(--mut);font-size:10.5px}
+.mini{background:var(--panel2);border:1px solid var(--line);color:var(--txt);border-radius:30px;
+  padding:8px 13px;cursor:pointer;font-size:12.5px;font-weight:700;white-space:nowrap}
+.mini.on{background:var(--grad);color:#fff;border-color:transparent;box-shadow:0 6px 16px rgba(255,77,13,.4)}
+.cam-chip{background:var(--acc);color:#fff;font-weight:700;font-size:12px;padding:6px 11px;
+  border-radius:30px;cursor:pointer;white-space:nowrap}
+.dl.mik{background:#7a5cff;color:#fff;box-shadow:0 8px 20px rgba(122,92,255,.3)}
+.dl.alt{background:var(--panel2);color:var(--txt);border:1px solid var(--line);box-shadow:none}

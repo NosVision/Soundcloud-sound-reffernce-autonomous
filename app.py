@@ -15,16 +15,17 @@ import io
 import csv
 from dataclasses import replace
 
-from flask import Flask, jsonify, render_template, request, send_file
+from flask import Flask, jsonify, render_template, request, send_file, abort
 
 from scfinder import load_config, find_references, SeenStore
 from scfinder.finder import COLUMNS
 from scfinder.client import SoundCloudClient, SoundCloudError
 from scfinder.mockclient import MockClient
+from scfinder.export import EXPORTERS
 
 app = Flask(__name__)
 BASE_CFG = load_config()
-_last_csv = {"data": ""}   # เก็บ CSV ล่าสุดไว้ให้โหลด
+_last = {"csv": "", "results": []}   # เก็บผลรันล่าสุดไว้ export
 
 
 def build_client(cfg):
@@ -56,6 +57,8 @@ def cfg_from_form(form: dict):
         related_per_seed=num("related_per_seed", BASE_CFG.related_per_seed, int),
         duration_min=num("duration_min", BASE_CFG.duration_min, float),
         duration_max=num("duration_max", BASE_CFG.duration_max, float),
+        bpm_min=num("bpm_min", BASE_CFG.bpm_min, float),
+        bpm_max=num("bpm_max", BASE_CFG.bpm_max, float),
         dedupe_enabled=bool(form.get("dedupe_enabled")),
         demo_mode=bool(form.get("demo_mode")),
         sleep=0.0 if form.get("demo_mode") else BASE_CFG.sleep,
@@ -83,13 +86,14 @@ def api_run():
 
     store.save()
 
-    # เก็บ CSV ไว้ให้ดาวน์โหลด
+    # เก็บ CSV + ผลลัพธ์ไว้ให้ export
     buf = io.StringIO()
     w = csv.writer(buf)
     w.writerow(COLUMNS)
     for r in results:
         w.writerow(r.as_row())
-    _last_csv["data"] = buf.getvalue()
+    _last["csv"] = buf.getvalue()
+    _last["results"] = results
 
     return jsonify({
         "ok": True,
@@ -102,12 +106,27 @@ def api_run():
 
 @app.route("/download")
 def download():
-    data = _last_csv["data"] or "no data — run ก่อน\n"
+    data = _last["csv"] or "no data — run ก่อน\n"
     return send_file(
         io.BytesIO(data.encode("utf-8")),
         mimetype="text/csv",
         as_attachment=True,
         download_name="sc_references.csv",
+    )
+
+
+@app.route("/export/<fmt>")
+def export(fmt):
+    """export ผลรันล่าสุดเป็นฟอร์แมตอื่น (Mixed In Key CSV / M3U8 / JSON)"""
+    if fmt not in EXPORTERS:
+        abort(404)
+    func, mime, fname = EXPORTERS[fmt]
+    data = func(_last["results"]) if _last["results"] else ""
+    return send_file(
+        io.BytesIO(data.encode("utf-8")),
+        mimetype=mime,
+        as_attachment=True,
+        download_name=fname,
     )
 
 

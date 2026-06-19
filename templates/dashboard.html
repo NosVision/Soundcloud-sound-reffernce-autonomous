@@ -49,6 +49,8 @@
         <div><label>related/seed</label><input id="related_per_seed" type="number" value="{{ cfg.related_per_seed }}"></div>
         <div><label>ยาวขั้นต่ำ (นาที)</label><input id="duration_min" type="number" step="0.5" value="{{ cfg.duration_min }}"></div>
         <div><label>ยาวสูงสุด (นาที)</label><input id="duration_max" type="number" step="0.5" value="{{ cfg.duration_max }}"></div>
+        <div><label>BPM ขั้นต่ำ</label><input id="bpm_min" type="number" value="{{ cfg.bpm_min }}"></div>
+        <div><label>BPM สูงสุด</label><input id="bpm_max" type="number" value="{{ cfg.bpm_max }}"></div>
       </div>
 
       <div class="toggles">
@@ -63,9 +65,13 @@
     <section class="panel results">
       <div class="results-head">
         <h2>ผลลัพธ์</h2>
-        <div>
+        <div class="actions">
           <input id="filterText" placeholder="กรองชื่อ/ศิลปิน…" class="filter">
+          <button id="harmonicBtn" class="mini hidden" title="เรียงเป็นลำดับที่ mix ต่อกันได้">🎚 Harmonic order</button>
+          <span id="camChip" class="cam-chip hidden"></span>
           <a id="dlBtn" href="/download" class="dl hidden">⬇ CSV</a>
+          <a id="dlMik" href="/export/mixedinkey" class="dl mik hidden">⬇ Mixed In Key</a>
+          <a id="dlM3u" href="/export/m3u8" class="dl alt hidden">⬇ M3U8</a>
         </div>
       </div>
       <div id="empty" class="empty">ยังไม่มีผล — ใส่ลิงก์แล้วกด Run (ลองเปิด demo mode ดูก่อนได้)</div>
@@ -77,6 +83,8 @@
               <th data-k="matched_seeds">matched_seeds ▼</th>
               <th data-k="title">title</th>
               <th data-k="artist">artist</th>
+              <th data-k="bpm">bpm</th>
+              <th data-k="camelot">key</th>
               <th data-k="genre">genre</th>
               <th data-k="plays">plays</th>
               <th data-k="likes">likes</th>

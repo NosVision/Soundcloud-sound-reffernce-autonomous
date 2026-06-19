@@ -28,6 +28,12 @@ duration:
   min_minutes: 0
   max_minutes: 0
 
+# filter BPM (Phase 2) — 0 = ไม่จำกัด ; เพลงที่ไม่มี BPM จะไม่ถูกตัด
+# (BPM/key มาจาก metadata ที่ uploader ใส่บน SoundCloud -> แปลงเป็น Camelot ให้อัตโนมัติ)
+bpm:
+  min: 0
+  max: 0
+
 # dedupe ข้ามรอบ: เพลงที่เคยเสนอแล้วจะไม่โผล่ซ้ำรอบหน้า
 dedupe:
   enabled: true
