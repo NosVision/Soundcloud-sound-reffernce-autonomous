@@ -68,6 +68,8 @@
         <div class="actions">
           <input id="filterText" placeholder="กรองชื่อ/ศิลปิน…" class="filter">
           <button id="harmonicBtn" class="mini hidden" title="เรียงเป็นลำดับที่ mix ต่อกันได้">🎚 Harmonic order</button>
+          <button id="swipeBtn" class="mini hidden" title="ฟังแล้วปัดซ้าย/ขวา">🔥 Swipe</button>
+          <button id="rerankBtn" class="mini hidden" title="จัดอันดับใหม่ตามรสนิยมที่เรียนรู้">✨ ตามรสนิยม</button>
           <span id="camChip" class="cam-chip hidden"></span>
           <a id="dlBtn" href="/download" class="dl hidden">⬇ CSV</a>
           <a id="dlMik" href="/export/mixedinkey" class="dl mik hidden">⬇ Mixed In Key</a>
@@ -99,6 +101,35 @@
       <details class="logs"><summary>log การทำงาน</summary><pre id="log"></pre></details>
     </section>
   </main>
+
+  <!-- Phase 4: Tinder-style swipe deck -->
+  <div id="swipeOverlay" class="overlay hidden">
+    <div class="deck">
+      <button id="swipeClose" class="deck-close" title="ปิด">✕</button>
+      <div class="deck-progress"><span id="swipeProg">0/0</span> · ❤️ <span id="swLike">0</span> · 💔 <span id="swNope">0</span></div>
+
+      <div id="swipeCard" class="card">
+        <div class="card-meta">
+          <h3 id="swTitle">—</h3>
+          <p id="swArtist" class="muted"></p>
+          <div id="swTags" class="card-tags"></div>
+        </div>
+        <iframe id="swPlayer" class="player" scrolling="no" frameborder="no" allow="autoplay" src=""></iframe>
+        <div class="card-actions">
+          <button id="btnNope" class="swbtn nope" title="ไม่ชอบ (←)">👎</button>
+          <button id="btnLike" class="swbtn like" title="ชอบ (→)">👍</button>
+        </div>
+        <small class="hint">กดปุ่ม หรือลูกศร ← / → · ฟังก่อนแล้วค่อยตัดสิน</small>
+      </div>
+
+      <div id="swipeDone" class="done hidden">
+        <h3>ปัดครบแล้ว 🎉</h3>
+        <p class="muted">รสนิยมถูกบันทึก — กด <b>✨ ตามรสนิยม</b> เพื่อจัดอันดับใหม่</p>
+      </div>
+
+      <div id="tasteProfile" class="taste"></div>
+    </div>
+  </div>
 
   <script src="{{ url_for('static', filename='app.js') }}"></script>
 </body>

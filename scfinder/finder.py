@@ -31,6 +31,7 @@ class Result:
     duration_min: float
     url: str
     track_id: int
+    pref: float = 0.0          # คะแนนรสนิยมที่เรียนรู้ (Phase 4) — ไม่อยู่ใน CSV หลัก
 
     def as_row(self) -> list:
         return [self.rank, self.matched_seeds, self.title, self.artist,

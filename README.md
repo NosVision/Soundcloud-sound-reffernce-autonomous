@@ -42,6 +42,7 @@ Slow Grind NIE Remix, YO-ZU edit ฯลฯ) เพลงพวกนี้ **ไ
 │   ├── mixset.py            # 🆕 เรียงเป็นลำดับ mix ต่อกัน (harmonic set)
 │   ├── export.py            # 🆕 export: Mixed In Key CSV / M3U8 / JSON
 │   ├── notify.py            # 🆕 แจ้งเตือนเข้า LINE (Messaging API) — Phase 3
+│   ├── feedback.py          # 🆕 like/dislike store + โมเดลเรียนรู้รสนิยม — Phase 4
 │   └── finder.py            #   pipeline: seeds -> related -> co-occurrence rank (+bpm/key/camelot)
 ├── autorun.py               # 🆕 รัน 1 รอบสำหรับ cron/launchd + ส่ง LINE (Phase 3)
 ├── AUTORUN.md               # 🆕 คู่มือตั้ง LINE + cron/launchd
@@ -162,6 +163,26 @@ python3 tests/test_finder.py   # เทสต์ pipeline (co-occurrence/filter/
 
 ---
 
+## 🔥 Swipe & เรียนรู้รสนิยม (Phase 4)
+
+แบบ Tinder ของเพลง — ผมไปหาเพลงมาให้ คุณฟังแล้วปัด ระบบเรียนรู้เอง
+
+**บน Dashboard** (หลัง Run กดปุ่ม **🔥 Swipe**)
+- การ์ดทีละเพลง มี **SoundCloud player ฟังในตัว** → กด 👍/👎 หรือลูกศร **←/→**
+- ทุกการปัดถูกเก็บใน `feedback.json` + อัปเดต **taste profile** ทันที (genre/คีย์/BPM/ศิลปินที่ชอบ)
+- กด **✨ ตามรสนิยม** → จัดอันดับผลใหม่โดยเอารสนิยมที่เรียนรู้มา "เสริม"
+
+**หลักการเรียนรู้** (`scfinder/feedback.py` — เบา ไม่ต้องใช้ ML lib)
+- เรียน *like-rate* ของแต่ละ feature (genre / camelot / bpm bucket / artist) แบบ smoothed
+- คะแนน `pref` ของเพลง = เฉลี่ยถ่วงน้ำหนักด้วยความมั่นใจ (ปัด feature นั้นมากี่ครั้ง)
+- re-rank แบบ blend: `matched_seeds + 0.5 × pref` → **co-occurrence ยังเป็นหัวใจ** pref แค่ดันในกลุ่มที่ matched ใกล้กัน
+
+> ออกแบบให้ต่อยอดง่าย: อยากเปลี่ยนไปใช้ logistic regression / embedding แทน → สลับ `PreferenceModel` ตัวเดียวจบ
+
+API ที่เปิดไว้ (เผื่อทำ mobile app ต่อ): `POST /api/feedback`, `GET /api/profile`, `POST /api/rerank`
+
+---
+
 ## Pipeline ทำงานยังไง (สำหรับคนจะมาแก้ต่อ)
 
 ```
@@ -208,10 +229,10 @@ seeds[] ──┬─ /tracks/{id}/related ──► candidates
 - [ ] ส่ง output เข้า Obsidian vault (NOS-VISION-BRAIN) หรือ Notion อัตโนมัติ
 - [ ] (optional) auto-สร้าง playlist บน SC จาก top picks ผ่าน oauth
 
-### Phase 4 — เรียนรู้รสนิยม (Tinder-style feedback) 🔜
-- [ ] ฟังเพลงแล้วปัดซ้าย/ขวา (👎/👍) บน dashboard
-- [ ] โมเดลเรียนรู้ like/dislike -> re-rank รอบหน้าให้ตรงขึ้น (โดยไม่ทำลาย co-occurrence)
-- [ ] โชว์ "taste profile" (genre/BPM/Camelot ที่ชอบ)
+### Phase 4 — เรียนรู้รสนิยม (Tinder-style feedback) ✅ (เสร็จแล้ว)
+- [x] ฟังเพลงแล้วปัดซ้าย/ขวา (👎/👍) บน dashboard — มี SoundCloud player ในการ์ด + ลูกศร ←/→
+- [x] โมเดลเรียนรู้ like/dislike -> re-rank ด้วยปุ่ม **✨ ตามรสนิยม** (co-occurrence ยังนำ ไม่ถูกกลบ)
+- [x] โชว์ **taste profile** (genre/BPM/Camelot/artist ที่ชอบ + like-rate)
 
 ### หลักที่อยากให้รักษาไว้ตอน build ต่อ
 1. **read-only, ใช้ส่วนตัว** — อย่ายิง API ถี่ ใส่ sleep/backoff เสมอ

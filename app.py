@@ -23,10 +23,12 @@ from scfinder.client import SoundCloudClient, SoundCloudError
 from scfinder.mockclient import MockClient
 from scfinder.export import EXPORTERS
 from scfinder.notify import notify_line_results
+from scfinder.feedback import FeedbackStore, PreferenceModel, annotate_and_rank
 
 app = Flask(__name__)
 BASE_CFG = load_config()
 _last = {"csv": "", "results": []}   # เก็บผลรันล่าสุดไว้ export
+FEEDBACK_FILE = "feedback.json"
 
 
 def build_client(cfg):
@@ -141,6 +143,47 @@ def api_notify():
     cfg = load_config()   # อ่าน token ล่าสุดจาก env
     ok, info = notify_line_results(_last["results"], cfg, when=when)
     return jsonify({"ok": ok, "info": info})
+
+
+# ========== Phase 4: Tinder-style feedback + learning ==========
+def _profile_payload(store: FeedbackStore) -> dict:
+    model = PreferenceModel(store.records)
+    return {"counts": store.counts(), "profile": model.profile()}
+
+
+@app.route("/api/feedback", methods=["POST"])
+def api_feedback():
+    """บันทึก 1 การปัด (like/dislike) + คืน taste profile ล่าสุด"""
+    data = request.get_json(silent=True) or {}
+    track = data.get("track") or {}
+    if not (track.get("track_id") or track.get("id")):
+        return jsonify({"ok": False, "info": "ไม่มี track"}), 200
+    store = FeedbackStore(FEEDBACK_FILE)
+    store.record(track, bool(data.get("liked")))
+    store.save()
+    return jsonify({"ok": True, **_profile_payload(store)})
+
+
+@app.route("/api/profile")
+def api_profile():
+    """taste profile + รายการ track_id ที่ปัดแล้ว (ไว้ข้ามใน swipe queue)"""
+    store = FeedbackStore(FEEDBACK_FILE)
+    return jsonify({"ok": True, "rated": sorted(store.rated_ids()),
+                    **_profile_payload(store)})
+
+
+@app.route("/api/rerank", methods=["POST"])
+def api_rerank():
+    """จัดอันดับผลรันล่าสุดใหม่ด้วยรสนิยมที่เรียนรู้ (co-occurrence ยังนำ)"""
+    if not _last["results"]:
+        return jsonify({"ok": False, "info": "ยังไม่มีผล — Run ก่อน"}), 200
+    store = FeedbackStore(FEEDBACK_FILE)
+    if not store.records:
+        return jsonify({"ok": False, "info": "ยังไม่มี feedback — ปัดเพลงก่อน"}), 200
+    ranked = annotate_and_rank(_last["results"], store.records, weight=0.5)
+    _last["results"] = ranked
+    return jsonify({"ok": True, "count": len(ranked),
+                    "results": [r.__dict__ for r in ranked]})
 
 
 if __name__ == "__main__":

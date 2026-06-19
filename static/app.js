@@ -103,7 +103,7 @@ async function run() {
     const demo = data.demo ? '<span class="badge">DEMO</span>' : "";
     $("status").innerHTML = `✅ ได้ ${data.count} เพลง ` + demo;
     const has = ROWS.length > 0;
-    ["dlBtn", "dlMik", "dlM3u", "harmonicBtn", "lineBtn"].forEach((id) =>
+    ["dlBtn", "dlMik", "dlM3u", "harmonicBtn", "lineBtn", "swipeBtn", "rerankBtn"].forEach((id) =>
       $(id).classList.toggle("hidden", !has));
   } catch (e) {
     $("status").textContent = "❌ " + e;
@@ -204,3 +204,117 @@ function render() {
 const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) =>
   ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 const fmt = (n) => (n || 0).toLocaleString();
+
+// ================= Phase 4: Tinder-style swipe =================
+let DECK = [];
+let DECK_I = 0;
+let SW_LIKE = 0, SW_NOPE = 0;
+let RATED = new Set();
+
+const ov = $("swipeOverlay");
+
+$("swipeBtn").addEventListener("click", openSwipe);
+$("rerankBtn").addEventListener("click", rerank);
+$("swipeClose").addEventListener("click", closeSwipe);
+$("btnLike").addEventListener("click", () => swipe(true));
+$("btnNope").addEventListener("click", () => swipe(false));
+document.addEventListener("keydown", (e) => {
+  if (ov.classList.contains("hidden")) return;
+  if (e.key === "ArrowRight") swipe(true);
+  else if (e.key === "ArrowLeft") swipe(false);
+  else if (e.key === "Escape") closeSwipe();
+});
+
+async function openSwipe() {
+  // ข้ามเพลงที่เคยปัดแล้ว
+  try {
+    const p = await (await fetch("/api/profile")).json();
+    RATED = new Set(p.rated || []);
+    renderTaste(p);
+  } catch (_) { RATED = new Set(); }
+  DECK = ROWS.filter((r) => !RATED.has(r.track_id));
+  DECK_I = 0; SW_LIKE = 0; SW_NOPE = 0;
+  ov.classList.remove("hidden");
+  $("swipeDone").classList.toggle("hidden", DECK.length > 0);
+  $("swipeCard").classList.toggle("hidden", DECK.length === 0);
+  showCard();
+}
+
+function closeSwipe() {
+  ov.classList.add("hidden");
+  $("swPlayer").src = "";          // หยุดเสียง
+}
+
+function showCard() {
+  $("swLike").textContent = SW_LIKE;
+  $("swNope").textContent = SW_NOPE;
+  $("swipeProg").textContent = `${Math.min(DECK_I + 1, DECK.length)}/${DECK.length}`;
+  if (DECK_I >= DECK.length) {
+    $("swipeCard").classList.add("hidden");
+    $("swipeDone").classList.remove("hidden");
+    $("swPlayer").src = "";
+    return;
+  }
+  const r = DECK[DECK_I];
+  $("swTitle").textContent = r.title || "(ไม่มีชื่อ)";
+  $("swArtist").textContent = r.artist || "";
+  const tags = [];
+  if (r.camelot) tags.push(`<span class="cam">${r.camelot}</span>`);
+  if (r.bpm) tags.push(`<span class="t">${r.bpm} bpm</span>`);
+  if (r.genre) tags.push(`<span class="t">${esc(r.genre)}</span>`);
+  tags.push(`<span class="t">×${r.matched_seeds} seeds</span>`);
+  $("swTags").innerHTML = tags.join("");
+  const u = encodeURIComponent(r.url);
+  $("swPlayer").src = `https://w.soundcloud.com/player/?url=${u}` +
+    `&color=%23ff5a1f&auto_play=true&hide_related=true&show_comments=false&visual=false`;
+}
+
+async function swipe(liked) {
+  if (DECK_I >= DECK.length) return;
+  const r = DECK[DECK_I];
+  liked ? SW_LIKE++ : SW_NOPE++;
+  RATED.add(r.track_id);
+  // animation เล็กน้อย
+  const card = $("swipeCard");
+  card.classList.add(liked ? "fly-right" : "fly-left");
+  setTimeout(() => card.classList.remove("fly-right", "fly-left"), 220);
+  try {
+    const res = await fetch("/api/feedback", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ track: r, liked }),
+    });
+    renderTaste(await res.json());
+  } catch (_) {}
+  DECK_I++;
+  setTimeout(showCard, 120);
+}
+
+function renderTaste(p) {
+  if (!p || !p.profile) return;
+  const c = p.counts || {};
+  const blocks = [];
+  const labels = { genre: "แนว", camelot: "คีย์", bpm: "BPM", artist: "ศิลปิน" };
+  for (const k of ["genre", "camelot", "bpm", "artist"]) {
+    const arr = (p.profile[k] || []).filter((x) => x.n > 0).slice(0, 3);
+    if (!arr.length) continue;
+    const items = arr.map((x) =>
+      `<span class="tp ${x.like_rate >= 0.5 ? "up" : "down"}">${esc(x.value)} ${Math.round(x.like_rate * 100)}%</span>`).join("");
+    blocks.push(`<div class="tp-row"><b>${labels[k]}</b>${items}</div>`);
+  }
+  $("tasteProfile").innerHTML =
+    `<div class="tp-head">รสนิยมที่เรียนรู้ · ❤️${c.likes || 0} 💔${c.dislikes || 0}</div>` +
+    (blocks.join("") || `<span class="muted">ปัดเพลงเพื่อเริ่มเรียนรู้…</span>`);
+}
+
+async function rerank() {
+  $("status").textContent = "กำลังจัดอันดับใหม่ตามรสนิยม…";
+  try {
+    const res = await fetch("/api/rerank", { method: "POST" });
+    const d = await res.json();
+    if (!d.ok) { $("status").innerHTML = "ℹ️ " + esc(d.info || ""); return; }
+    ROWS = d.results || [];
+    HARMONIC = false; CAM_FILTER = ""; sortKey = "rank"; sortDir = 1;
+    render();
+    $("status").innerHTML = "✨ จัดอันดับใหม่ตามรสนิยมแล้ว (co-occurrence ยังนำ)";
+  } catch (e) { $("status").textContent = "❌ " + e; }
+}
