@@ -107,7 +107,9 @@
             <div><label>ยาวสูงสุด (นาที)</label><input id="duration_max" type="number" step="0.5" value="{{ cfg.duration_max }}"></div>
             <div><label>BPM ขั้นต่ำ</label><input id="bpm_min" type="number" value="{{ cfg.bpm_min }}"></div>
             <div><label>BPM สูงสุด</label><input id="bpm_max" type="number" value="{{ cfg.bpm_max }}"></div>
+            <div><label>เพลงเก่า/เคยฟังสูงสุด (%)</label><input id="fresh_pct" type="number" min="0" max="100" value="{{ (cfg.fresh_cap * 100) | round | int }}"></div>
           </div>
+          <small>กันไม่ให้ผลมีเพลงที่คุณ like/เคยปัดไปแล้วเกิน % นี้ (เช่น 15 = โชว์เพลงเก่าได้ไม่เกิน 15% ที่เหลือเป็นเพลงใหม่) · 0 = ไม่จำกัด</small>
           <div class="toggles">
             <label class="chk"><input id="dedupe_enabled" type="checkbox" {% if cfg.dedupe_enabled %}checked{% endif %}> dedupe ข้ามรอบ (ไม่เสนอซ้ำ)</label>
             <label class="chk"><input id="demo_mode" type="checkbox" {% if cfg.demo_mode %}checked{% endif %}> demo mode (ไม่ต่อเน็ต — ลองได้เลย)</label>

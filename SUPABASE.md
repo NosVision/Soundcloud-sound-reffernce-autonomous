@@ -24,9 +24,18 @@ create table if not exists feedback (
   features    jsonb,
   updated_at  timestamptz default now()
 );
+
+-- เก็บผลรันล่าสุด (ไว้กู้ตอนรีเฟรช/เปิดจากอีกเครื่อง โดยไม่ต้อง Run ใหม่)
+create table if not exists app_state (
+  key         text primary key,
+  value       jsonb,
+  updated_at  timestamptz default now()
+);
 ```
 
-(แอปใช้ **upsert** ผ่าน primary key `track_id` — ปัดเพลงเดิมซ้ำ = อัปเดต ไม่เพิ่มแถว)
+(แอปใช้ **upsert** ผ่าน primary key — ปัด/รันซ้ำ = อัปเดต ไม่เพิ่มแถว)
+
+> ⚠️ ถ้าตั้ง Supabase ไว้ก่อนหน้านี้แล้ว ให้รัน **เฉพาะ** ส่วน `app_state` เพิ่ม (ตารางใหม่)
 
 ## 2. เอา URL + Key
 

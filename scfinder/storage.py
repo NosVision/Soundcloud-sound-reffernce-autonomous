@@ -94,3 +94,25 @@ class SupabaseStorage:
             return True
         except Exception:
             return False
+
+    # ---------- app_state (เก็บผลรันล่าสุด ฯลฯ — ตาราง app_state) ----------
+    def save_state(self, key: str, value) -> bool:
+        try:
+            self._post(f"{self.base}/app_state",
+                       headers=self._headers({"Prefer": "resolution=merge-duplicates"}),
+                       json=[{"key": key, "value": value}], timeout=30)
+            return True
+        except Exception:
+            return False
+
+    def load_state(self, key: str):
+        try:
+            r = self._get(f"{self.base}/app_state?key=eq.{key}&select=value",
+                          headers=self._headers(), timeout=15)
+            if getattr(r, "status_code", 0) != 200:
+                return None
+            rows = r.json()
+            return rows[0]["value"] if rows else None
+        except Exception:
+            return None
+

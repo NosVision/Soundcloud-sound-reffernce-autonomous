@@ -104,6 +104,7 @@ async function run() {
     duration_max: $("duration_max").value,
     bpm_min: $("bpm_min").value,
     bpm_max: $("bpm_max").value,
+    fresh_pct: $("fresh_pct") ? $("fresh_pct").value : "",
     dedupe_enabled: $("dedupe_enabled").checked,
     demo_mode: $("demo_mode").checked,
   };
@@ -294,16 +295,19 @@ function stopPlayer() {
 }
 
 async function openSwipe() {
-  if (SWIPE_READY) return;            // เก็บความคืบหน้าไว้ตอนสลับหน้าไปมา
-  try {
-    const p = await (await fetch("/api/profile")).json();
-    RATED = new Set(p.rated || []);
-    renderTaste(p);
-  } catch (_) { RATED = new Set(); }
-  DECK = ROWS.filter((r) => !RATED.has(r.track_id));
-  DECK_I = 0; SW_LIKE = 0; SW_NOPE = 0;
-  SWIPE_READY = true;
-  const hasDeck = DECK.length > 0, noRows = ROWS.length === 0;
+  if (!SWIPE_READY) {                 // สร้าง deck ครั้งแรก / หลังรันใหม่
+    try {
+      const p = await (await fetch("/api/profile")).json();
+      RATED = new Set(p.rated || []);
+      renderTaste(p);
+    } catch (_) { RATED = new Set(); }
+    DECK = ROWS.filter((r) => !RATED.has(r.track_id));
+    DECK_I = 0; SW_LIKE = 0; SW_NOPE = 0;
+    SWIPE_READY = true;
+  }
+  // โหลด player ของการ์ดปัจจุบัน "ทุกครั้ง" ที่เข้าหน้า (แก้ปัญหา player ไม่โผล่ ต้องปัดก่อน)
+  const hasDeck = DECK.length > 0 && DECK_I < DECK.length;
+  const noRows = ROWS.length === 0;
   $("swipeEmpty").classList.toggle("hidden", !noRows);
   $("swipeDone").classList.toggle("hidden", hasDeck || noRows);
   $("swipeCard").classList.toggle("hidden", !hasDeck);
@@ -490,3 +494,17 @@ async function reRate(id) {
     await loadHistory();
   } catch (_) {}
 }
+
+// ================= กู้ผลรันล่าสุดตอนเปิดหน้า (รีเฟรช/เปลี่ยนเครื่องก็ไม่หาย) =================
+(async function restoreLast() {
+  try {
+    const d = await (await fetch("/api/last")).json();
+    if (d.ok && d.results && d.results.length) {
+      ROWS = d.results;
+      sortKey = "matched_seeds"; sortDir = -1;
+      render();
+      ["dlBtn", "dlMik", "dlM3u", "harmonicBtn", "lineBtn", "swipeBtn", "rerankBtn"]
+        .forEach((id) => $(id).classList.remove("hidden"));
+    }
+  } catch (_) {}
+})();

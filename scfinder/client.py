@@ -111,6 +111,25 @@ class SoundCloudClient:
             time.sleep(self.sleep)
         return seeds[:max_seeds]
 
+    def get_liked_track_ids(self, user_id: int, limit: int = 400) -> set:
+        """ดึง id เพลงที่ user กด like แบบกว้าง (ไว้ทำ known-set กันเสนอเพลงเก่าซ้ำ)"""
+        url = "/me/track_likes" if self.oauth_token else f"/users/{user_id}/track_likes"
+        params = {"limit": 100, "linked_partitioning": 1}
+        ids, next_url = set(), url
+        while next_url and len(ids) < limit:
+            try:
+                data = self._get(next_url, params)
+            except SoundCloudError:
+                break
+            for item in data.get("collection", []):
+                t = item.get("track", item)
+                if t and t.get("kind") == "track":
+                    ids.add(t["id"])
+            next_url = data.get("next_href")
+            params = {}
+            time.sleep(self.sleep)
+        return ids
+
     def get_related(self, track_id: int, limit: int) -> list:
         try:
             data = self._get(f"/tracks/{track_id}/related", {"limit": limit})

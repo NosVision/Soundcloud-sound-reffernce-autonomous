@@ -94,7 +94,8 @@ def build_seeds(client, cfg, log: Callable[[str], None]) -> list:
 
 
 def find_references(client, cfg, store: Optional[SeenStore] = None,
-                    log: Optional[Callable[[str], None]] = None) -> List[Result]:
+                    log: Optional[Callable[[str], None]] = None,
+                    known_ids: Optional[set] = None) -> List[Result]:
     log = log or (lambda *_: None)
 
     seeds = build_seeds(client, cfg, log)
@@ -145,11 +146,29 @@ def find_references(client, cfg, store: Optional[SeenStore] = None,
                 pool.pop(tid)
         log(f"dedupe ข้ามรอบ (seen.json): {before} -> {len(pool)} เพลง")
 
-    ranked = sorted(
-        pool.values(),
-        key=lambda t: (hits.get(t["id"], 0), t.get("playback_count", 0) or 0),
-        reverse=True,
-    )[:cfg.target]
+    def _score(t):
+        return (hits.get(t["id"], 0), t.get("playback_count", 0) or 0)
+
+    sorted_all = sorted(pool.values(), key=_score, reverse=True)
+
+    # ---- คุมสัดส่วน "เพลงที่เคยรู้จัก" (like/rated) ไม่ให้เกิน fresh_cap ----
+    known = known_ids or set()
+    fresh_cap = getattr(cfg, "fresh_cap", 0.0) or 0.0
+    if known and 0 < fresh_cap < 1:
+        cap = int(cfg.target * fresh_cap)
+        new_list = [t for t in sorted_all if t["id"] not in known]
+        known_list = [t for t in sorted_all if t["id"] in known]
+        keep_known = known_list[:cap]
+        keep_new = new_list[:max(0, cfg.target - len(keep_known))]
+        chosen = keep_new + keep_known
+        if len(chosen) < cfg.target:                 # เพลงใหม่ไม่พอ -> เติม known ส่วนเกิน
+            chosen += known_list[cap: cap + (cfg.target - len(chosen))]
+        chosen.sort(key=_score, reverse=True)
+        ranked = chosen[:cfg.target]
+        log(f"freshness: known {len(known_list)} เพลง -> จำกัดไว้ {len(keep_known)} "
+            f"(≤{int(fresh_cap*100)}%), ที่เหลือเป็นเพลงใหม่")
+    else:
+        ranked = sorted_all[:cfg.target]
 
     results = []
     for i, t in enumerate(ranked, 1):

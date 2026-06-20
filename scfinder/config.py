@@ -29,6 +29,7 @@ DEFAULTS = {
     "target": 120,
     "related_per_seed": 50,
     "sleep": 0.4,
+    "fresh_cap": 0.15,            # สัดส่วนสูงสุดของ "เพลงที่เคยรู้จัก" (like/rated) ในผล (0.15 = 15%)
     "duration": {"min_minutes": 0, "max_minutes": 0},   # 0 = ไม่จำกัด
     "bpm": {"min": 0, "max": 0},                         # 0 = ไม่จำกัด (Phase 2)
     "dedupe": {"enabled": True, "seen_file": "seen.json"},
@@ -48,6 +49,7 @@ class Config:
     target: int = DEFAULTS["target"]
     related_per_seed: int = DEFAULTS["related_per_seed"]
     sleep: float = DEFAULTS["sleep"]
+    fresh_cap: float = 0.15       # สัดส่วนสูงสุดของเพลงที่เคยรู้จักในผล (0 = ไม่จำกัด)
     duration_min: float = 0.0     # นาที, 0 = ไม่จำกัด
     duration_max: float = 0.0     # นาที, 0 = ไม่จำกัด
     bpm_min: float = 0.0          # 0 = ไม่จำกัด
@@ -116,6 +118,7 @@ def load_config(path: str = "config.yaml") -> Config:
         target=int(data["target"]),
         related_per_seed=int(data["related_per_seed"]),
         sleep=float(data["sleep"]),
+        fresh_cap=float(data.get("fresh_cap", 0.15) or 0),
         duration_min=float(dur.get("min_minutes", 0) or 0),
         duration_max=float(dur.get("max_minutes", 0) or 0),
         bpm_min=float(bpm.get("min", 0) or 0),
