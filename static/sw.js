@@ -1,6 +1,9 @@
-/* service worker เบาๆ: cache static shell ให้เปิดเป็นแอปบนมือถือได้
-   ไม่ cache /api เพื่อให้ข้อมูลสดเสมอ */
-const CACHE = "scf-v1";
+/* service worker: network-first สำหรับ app shell
+   - ออนไลน์: ดึงไฟล์สดเสมอ (deploy ใหม่เห็นทันที) แล้วเก็บสำเนาไว้
+   - ออฟไลน์: fallback เป็นสำเนาล่าสุดที่เคยโหลด
+   - ไม่แตะ /api ฯลฯ เพื่อให้ข้อมูลสดเสมอ
+   เปลี่ยนเลขเวอร์ชันทุกครั้งที่อยากบังคับล้างแคชเก่า */
+const CACHE = "scf-v3";
 const ASSETS = ["/", "/static/style.css", "/static/app.js",
                 "/static/icon.svg", "/static/manifest.webmanifest"];
 
@@ -10,9 +13,11 @@ self.addEventListener("install", (e) => {
 });
 
 self.addEventListener("activate", (e) => {
-  e.waitUntil(caches.keys().then((keys) =>
-    Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k)))));
-  self.clients.claim();
+  e.waitUntil(
+    caches.keys()
+      .then((keys) => Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k))))
+      .then(() => self.clients.claim())
+  );
 });
 
 self.addEventListener("fetch", (e) => {
@@ -24,12 +29,12 @@ self.addEventListener("fetch", (e) => {
       url.pathname.startsWith("/logout")) {
     return;
   }
+  // network-first: เอาของใหม่ก่อน ถ้าเน็ตล่มค่อยใช้แคช
   e.respondWith(
-    caches.match(e.request).then((hit) =>
-      hit || fetch(e.request).then((res) => {
-        const copy = res.clone();
-        caches.open(CACHE).then((c) => c.put(e.request, copy)).catch(() => {});
-        return res;
-      }).catch(() => hit))
+    fetch(e.request).then((res) => {
+      const copy = res.clone();
+      caches.open(CACHE).then((c) => c.put(e.request, copy)).catch(() => {});
+      return res;
+    }).catch(() => caches.match(e.request))
   );
 });
