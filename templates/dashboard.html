@@ -124,6 +124,10 @@
           <div id="swTags" class="card-tags"></div>
         </div>
         <iframe id="swPlayer" class="player" scrolling="no" frameborder="no" allow="autoplay" src=""></iframe>
+        <div class="vol-row" style="display:flex;align-items:center;gap:10px;margin:8px 2px 2px;">
+          <button id="swMute" type="button" title="ปิด/เปิดเสียง" style="background:none;border:none;font-size:20px;line-height:1;cursor:pointer;padding:0;">🔊</button>
+          <input id="swVol" type="range" min="0" max="100" value="40" title="ระดับเสียง (↑/↓)" style="flex:1;accent-color:#ff5a1f;cursor:pointer;">
+        </div>
         <div class="card-actions">
           <button id="btnNope" class="swbtn nope" title="ไม่ชอบ (←)">👎</button>
           <button id="btnLike" class="swbtn like" title="ชอบ (→)">👍</button>
@@ -140,6 +144,7 @@
     </div>
   </div>
 
+  <script src="https://w.soundcloud.com/player/api.js"></script>
   <script src="{{ url_for('static', filename='app.js') }}"></script>
 </body>
 </html>

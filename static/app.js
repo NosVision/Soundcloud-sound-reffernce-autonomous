@@ -217,6 +217,31 @@ let DECK_I = 0;
 let SW_LIKE = 0, SW_NOPE = 0;
 let RATED = new Set();
 
+// ----- ระดับเสียง (จำไว้ใน localStorage) -----
+let scWidget = null;            // SoundCloud Widget API ของการ์ดปัจจุบัน
+let lastVol = 40;
+function curVol() {
+  const v = parseInt(localStorage.getItem("swVol"), 10);
+  return Number.isFinite(v) ? v : 40;   // default 40 (ไม่ดังเกิน)
+}
+function setVol(v) {
+  v = Math.max(0, Math.min(100, Math.round(v)));
+  if (v > 0) lastVol = v;
+  localStorage.setItem("swVol", v);
+  if ($("swVol")) $("swVol").value = v;
+  if ($("swMute")) $("swMute").textContent = v === 0 ? "🔇" : (v < 50 ? "🔉" : "🔊");
+  if (scWidget) { try { scWidget.setVolume(v); } catch (_) {} }
+}
+function toggleMute() { setVol(curVol() > 0 ? 0 : (lastVol || 40)); }
+function applyVolToWidget() {
+  // ผูก widget ของการ์ดปัจจุบัน แล้วตั้งเสียงตามที่จำไว้
+  if (!(window.SC && SC.Widget)) return;
+  try {
+    scWidget = SC.Widget($("swPlayer"));
+    scWidget.bind(SC.Widget.Events.READY, () => { try { scWidget.setVolume(curVol()); } catch (_) {} });
+  } catch (_) {}
+}
+
 const ov = $("swipeOverlay");
 
 $("swipeBtn").addEventListener("click", openSwipe);
@@ -224,10 +249,15 @@ $("rerankBtn").addEventListener("click", rerank);
 $("swipeClose").addEventListener("click", closeSwipe);
 $("btnLike").addEventListener("click", () => swipe(true));
 $("btnNope").addEventListener("click", () => swipe(false));
+if ($("swVol")) $("swVol").addEventListener("input", (e) => setVol(parseInt(e.target.value, 10)));
+if ($("swMute")) $("swMute").addEventListener("click", toggleMute);
+setVol(curVol());               // ตั้งสไลเดอร์/ไอคอนให้ตรงค่าที่จำไว้
 document.addEventListener("keydown", (e) => {
   if (ov.classList.contains("hidden")) return;
   if (e.key === "ArrowRight") swipe(true);
   else if (e.key === "ArrowLeft") swipe(false);
+  else if (e.key === "ArrowUp") { setVol(curVol() + 10); e.preventDefault(); }
+  else if (e.key === "ArrowDown") { setVol(curVol() - 10); e.preventDefault(); }
   else if (e.key === "Escape") closeSwipe();
 });
 
@@ -273,6 +303,7 @@ function showCard() {
   const u = encodeURIComponent(r.url);
   $("swPlayer").src = `https://w.soundcloud.com/player/?url=${u}` +
     `&color=%23ff5a1f&auto_play=true&hide_related=true&show_comments=false&visual=false`;
+  applyVolToWidget();           // ตั้งระดับเสียงตามที่ผู้ใช้เลือกไว้
 }
 
 async function swipe(liked) {
