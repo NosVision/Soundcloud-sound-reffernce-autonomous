@@ -234,29 +234,38 @@ setVol(curVol());
 
 // โหลดเพลงเข้า player:
 //  - ครั้งแรก: ตั้ง src + สร้าง SC.Widget ครั้งเดียว
-//  - ครั้งต่อไป: ใช้ widget.load() (ไม่ reload iframe -> เร็ว + ตั้ง volume ได้จริงใน callback)
+//  - ครั้งต่อไป: ใช้ widget.load() (ไม่ reload iframe -> เร็ว)
+// สำคัญ: SC widget รีเซ็ตเสียงเป็น 100% ทุกครั้งที่ "เริ่มเล่น" -> ต้องตั้ง volume ตอน PLAY ด้วย
+function applyVol() {
+  if (!scWidget) return;
+  try {
+    scWidget.setVolume(curVol());
+    // debug: ให้ widget รายงานเสียงจริงกลับมา (เปิด console ดูได้ว่า setVolume ติดไหม)
+    if (scWidget.getVolume) scWidget.getVolume((v) =>
+      console.debug("[vol] ตั้ง", curVol(), "→ widget รายงาน", v));
+  } catch (_) {}
+}
+function bindWidget() {
+  if (!scWidget) return;
+  scWidget.bind(SC.Widget.Events.READY, () => { widgetReady = true; applyVol(); });
+  scWidget.bind(SC.Widget.Events.PLAY, () => { widgetReady = true; applyVol(); });
+}
+const _PB = "https://w.soundcloud.com/player/?url=";
+const _PO = "&color=%23ff5a1f&auto_play=true&hide_related=true&show_comments=false&visual=false";
 function playTrack(url) {
   if (scWidget && widgetReady) {
     try {
       scWidget.load(url, {
         auto_play: true, show_comments: false, show_user: false,
         visual: false, hide_related: true,
-        callback: () => { try { scWidget.setVolume(curVol()); } catch (_) {} },
+        callback: applyVol,           // ตั้งเสียงทันทีหลังโหลดเสร็จ
       });
       return;
     } catch (_) {}
   }
-  const u = encodeURIComponent(url);
-  $("swPlayer").src = `https://w.soundcloud.com/player/?url=${u}` +
-    `&color=%23ff5a1f&auto_play=true&hide_related=true&show_comments=false&visual=false`;
+  $("swPlayer").src = _PB + encodeURIComponent(url) + _PO;
   if (window.SC && SC.Widget && !scWidget) {
-    try {
-      scWidget = SC.Widget($("swPlayer"));
-      scWidget.bind(SC.Widget.Events.READY, () => {
-        widgetReady = true;
-        try { scWidget.setVolume(curVol()); } catch (_) {}
-      });
-    } catch (_) {}
+    try { scWidget = SC.Widget($("swPlayer")); bindWidget(); } catch (_) {}
   }
 }
 
