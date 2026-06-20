@@ -2,146 +2,166 @@
 <html lang="th">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <meta name="theme-color" content="#ff5a1f">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="SC Finder">
   <link rel="manifest" href="{{ url_for('static', filename='manifest.webmanifest') }}">
   <link rel="apple-touch-icon" href="{{ url_for('static', filename='icon.svg') }}">
-  <title>SC Reference Finder — Dashboard</title>
+  <title>SC Reference Finder</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body data-theme="dark">
-  <header>
-    <div class="brand">
-      <div class="logo">🎧</div>
-      <div>
-        <h1>SC Reference Finder</h1>
-        <p class="sub">หา reference เพลงตรงแนวที่ชอบจาก SoundCloud — likes / ลิงก์เพลง → related → จัดอันดับด้วย co-occurrence</p>
+  <div class="app">
+
+    <header>
+      <div class="brand">
+        <div class="logo">🎧</div>
+        <h1>SC Finder</h1>
       </div>
-    </div>
-    <div class="head-btns">
-      <button id="themeBtn" class="theme-btn">☀️ ขาว-ส้ม</button>
-      <a href="/logout" class="theme-btn" id="logoutBtn">ออก</a>
-    </div>
-  </header>
-
-  <main>
-    <section class="panel controls">
-      <h2>1 · ใส่เพลงที่ชอบ (seed)</h2>
-
-      <label>วิธีเลือก seed</label>
-      <div class="seg" id="seedMode">
-        <button data-mode="urls"  class="active">ลิงก์เพลง</button>
-        <button data-mode="likes">likes ของ profile</button>
-        <button data-mode="both">ทั้งสอง</button>
+      <div class="head-btns">
+        <button id="themeBtn" class="theme-btn" title="สลับธีม">☀️</button>
+        <a href="/logout" class="theme-btn" id="logoutBtn">ออก</a>
       </div>
+    </header>
 
-      <div id="urlsBox">
-        <label>วางลิงก์ SoundCloud (เพลงที่ชอบ) — บรรทัดละ 1 ลิงก์</label>
-        <textarea id="seed_urls" rows="5"
-          placeholder="https://soundcloud.com/artist/track-1&#10;https://soundcloud.com/artist/track-2">{{ "\n".join(cfg.seed_urls) }}</textarea>
-        <small>เพลงพวกนี้คือ “รสนิยม” ที่ใช้เป็นต้นทาง ยิ่งใส่หลากหลายในแนวเดียวกัน ผลยิ่งตรง</small>
-      </div>
+    <div id="status" class="status"></div>
 
-      <div id="profileBox" class="hidden">
-        <label>Profile URL ของคุณ</label>
-        <input id="profile_url" type="text" value="{{ cfg.profile_url }}"
-               placeholder="https://soundcloud.com/your-handle">
-      </div>
+    <main class="pager" id="pager">
 
-      <h2>2 · ตั้งค่า</h2>
-      <div class="grid">
-        <div><label>max seeds</label><input id="max_seeds" type="number" value="{{ cfg.max_seeds }}"></div>
-        <div><label>target (จำนวนผล)</label><input id="target" type="number" value="{{ cfg.target }}"></div>
-        <div><label>related/seed</label><input id="related_per_seed" type="number" value="{{ cfg.related_per_seed }}"></div>
-        <div><label>ยาวขั้นต่ำ (นาที)</label><input id="duration_min" type="number" step="0.5" value="{{ cfg.duration_min }}"></div>
-        <div><label>ยาวสูงสุด (นาที)</label><input id="duration_max" type="number" step="0.5" value="{{ cfg.duration_max }}"></div>
-        <div><label>BPM ขั้นต่ำ</label><input id="bpm_min" type="number" value="{{ cfg.bpm_min }}"></div>
-        <div><label>BPM สูงสุด</label><input id="bpm_max" type="number" value="{{ cfg.bpm_max }}"></div>
-      </div>
+      <!-- ===== หน้า 1: ค้นหา ===== -->
+      <section class="page" id="page-search">
+        <h2>1 · ใส่เพลงที่ชอบ (seed)</h2>
 
-      <div class="toggles">
-        <label class="chk"><input id="dedupe_enabled" type="checkbox" {% if cfg.dedupe_enabled %}checked{% endif %}> dedupe ข้ามรอบ (ไม่เสนอซ้ำ)</label>
-        <label class="chk"><input id="demo_mode" type="checkbox" {% if cfg.demo_mode %}checked{% endif %}> demo mode (ไม่ต่อเน็ต — ลองได้เลย)</label>
-      </div>
+        <label>วิธีเลือก seed</label>
+        <div class="seg" id="seedMode">
+          <button data-mode="urls" class="active">ลิงก์เพลง</button>
+          <button data-mode="likes">likes</button>
+          <button data-mode="both">ทั้งสอง</button>
+        </div>
 
-      <button id="runBtn" class="run">▶ Run</button>
-      <div id="status" class="status"></div>
-    </section>
+        <div id="urlsBox">
+          <label>วางลิงก์ SoundCloud (เพลงที่ชอบ) — บรรทัดละ 1 ลิงก์</label>
+          <textarea id="seed_urls" rows="4"
+            placeholder="https://soundcloud.com/artist/track-1&#10;https://soundcloud.com/artist/track-2">{{ "\n".join(cfg.seed_urls) }}</textarea>
+          <small>ยิ่งใส่หลากหลายในแนวเดียวกัน ผลยิ่งตรง</small>
+        </div>
 
-    <section class="panel results">
-      <div class="results-head">
-        <h2>ผลลัพธ์</h2>
-        <div class="actions">
+        <div id="profileBox" class="hidden">
+          <label>Profile URL ของคุณ</label>
+          <input id="profile_url" type="text" value="{{ cfg.profile_url }}"
+                 placeholder="https://soundcloud.com/your-handle">
+        </div>
+
+        <h2>2 · ตั้งค่า</h2>
+        <div class="grid">
+          <div><label>max seeds</label><input id="max_seeds" type="number" value="{{ cfg.max_seeds }}"></div>
+          <div><label>target (จำนวนผล)</label><input id="target" type="number" value="{{ cfg.target }}"></div>
+          <div><label>related/seed</label><input id="related_per_seed" type="number" value="{{ cfg.related_per_seed }}"></div>
+          <div><label>ยาวขั้นต่ำ (นาที)</label><input id="duration_min" type="number" step="0.5" value="{{ cfg.duration_min }}"></div>
+          <div><label>ยาวสูงสุด (นาที)</label><input id="duration_max" type="number" step="0.5" value="{{ cfg.duration_max }}"></div>
+          <div><label>BPM ขั้นต่ำ</label><input id="bpm_min" type="number" value="{{ cfg.bpm_min }}"></div>
+          <div><label>BPM สูงสุด</label><input id="bpm_max" type="number" value="{{ cfg.bpm_max }}"></div>
+        </div>
+
+        <div class="toggles">
+          <label class="chk"><input id="dedupe_enabled" type="checkbox" {% if cfg.dedupe_enabled %}checked{% endif %}> dedupe ข้ามรอบ (ไม่เสนอซ้ำ)</label>
+          <label class="chk"><input id="demo_mode" type="checkbox" {% if cfg.demo_mode %}checked{% endif %}> demo mode (ไม่ต่อเน็ต — ลองได้เลย)</label>
+        </div>
+
+        <button id="runBtn" class="run">▶ Run</button>
+        <p class="page-hint">ปัดซ้าย/ขวา หรือแตะแถบเมนูด้านล่างเพื่อเปลี่ยนหน้า</p>
+      </section>
+
+      <!-- ===== หน้า 2: ผลลัพธ์ ===== -->
+      <section class="page" id="page-results">
+        <div class="results-head">
+          <h2>ผลลัพธ์</h2>
           <input id="filterText" placeholder="กรองชื่อ/ศิลปิน…" class="filter">
-          <button id="harmonicBtn" class="mini hidden" title="เรียงเป็นลำดับที่ mix ต่อกันได้">🎚 Harmonic order</button>
+        </div>
+        <div class="actions">
+          <button id="harmonicBtn" class="mini hidden" title="เรียงเป็นลำดับที่ mix ต่อกันได้">🎚 Harmonic</button>
           <button id="swipeBtn" class="mini hidden" title="ฟังแล้วปัดซ้าย/ขวา">🔥 Swipe</button>
           <button id="rerankBtn" class="mini hidden" title="จัดอันดับใหม่ตามรสนิยมที่เรียนรู้">✨ ตามรสนิยม</button>
           <span id="camChip" class="cam-chip hidden"></span>
           <a id="dlBtn" href="/download" class="dl hidden">⬇ CSV</a>
-          <a id="dlMik" href="/export/mixedinkey" class="dl mik hidden">⬇ Mixed In Key</a>
+          <a id="dlMik" href="/export/mixedinkey" class="dl mik hidden">⬇ MIK</a>
           <a id="dlM3u" href="/export/m3u8" class="dl alt hidden">⬇ M3U8</a>
           <button id="lineBtn" class="dl line hidden" title="ส่งสรุปเข้า LINE">📱 LINE</button>
         </div>
-      </div>
-      <div id="empty" class="empty">ยังไม่มีผล — ใส่ลิงก์แล้วกด Run (ลองเปิด demo mode ดูก่อนได้)</div>
-      <div class="table-wrap">
-        <table id="tbl" class="hidden">
-          <thead>
-            <tr>
-              <th data-k="rank">#</th>
-              <th data-k="matched_seeds">matched_seeds ▼</th>
-              <th data-k="title">title</th>
-              <th data-k="artist">artist</th>
-              <th data-k="bpm">bpm</th>
-              <th data-k="camelot">key</th>
-              <th data-k="genre">genre</th>
-              <th data-k="plays">plays</th>
-              <th data-k="likes">likes</th>
-              <th data-k="duration_min">min</th>
-              <th>link</th>
-            </tr>
-          </thead>
-          <tbody></tbody>
-        </table>
-      </div>
-      <details class="logs"><summary>log การทำงาน</summary><pre id="log"></pre></details>
-    </section>
-  </main>
-
-  <!-- Phase 4: Tinder-style swipe deck -->
-  <div id="swipeOverlay" class="overlay hidden">
-    <div class="deck">
-      <button id="swipeClose" class="deck-close" title="ปิด">✕</button>
-      <div class="deck-progress"><span id="swipeProg">0/0</span> · ❤️ <span id="swLike">0</span> · 💔 <span id="swNope">0</span></div>
-
-      <div id="swipeCard" class="card">
-        <div class="card-meta">
-          <h3 id="swTitle">—</h3>
-          <p id="swArtist" class="muted"></p>
-          <div id="swTags" class="card-tags"></div>
+        <div id="empty" class="empty">ยังไม่มีผล — ไปหน้า 🔎 ค้นหา ใส่ลิงก์แล้วกด Run (ลองเปิด demo mode ดูก่อนได้)</div>
+        <div class="table-wrap">
+          <table id="tbl" class="hidden">
+            <thead>
+              <tr>
+                <th data-k="rank">#</th>
+                <th data-k="matched_seeds">matched_seeds ▼</th>
+                <th data-k="title">title</th>
+                <th data-k="artist">artist</th>
+                <th data-k="bpm">bpm</th>
+                <th data-k="camelot">key</th>
+                <th data-k="genre">genre</th>
+                <th data-k="plays">plays</th>
+                <th data-k="likes">likes</th>
+                <th data-k="duration_min">min</th>
+                <th>link</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
         </div>
-        <iframe id="swPlayer" class="player" scrolling="no" frameborder="no" allow="autoplay" src=""></iframe>
-        <div class="vol-row" style="display:flex;align-items:center;gap:10px;margin:8px 2px 2px;">
-          <button id="swMute" type="button" title="ปิด/เปิดเสียง" style="background:none;border:none;font-size:20px;line-height:1;cursor:pointer;padding:0;">🔊</button>
-          <input id="swVol" type="range" min="0" max="100" value="40" title="ระดับเสียง (↑/↓)" style="flex:1;accent-color:#ff5a1f;cursor:pointer;">
-        </div>
-        <div class="card-actions">
-          <button id="btnNope" class="swbtn nope" title="ไม่ชอบ (←)">👎</button>
-          <button id="btnLike" class="swbtn like" title="ชอบ (→)">👍</button>
-        </div>
-        <small class="hint">กดปุ่ม หรือลูกศร ← / → · ฟังก่อนแล้วค่อยตัดสิน</small>
-      </div>
+        <details class="logs"><summary>log การทำงาน</summary><pre id="log"></pre></details>
+      </section>
 
-      <div id="swipeDone" class="done hidden">
-        <h3>ปัดครบแล้ว 🎉</h3>
-        <p class="muted">รสนิยมถูกบันทึก — กด <b>✨ ตามรสนิยม</b> เพื่อจัดอันดับใหม่</p>
-      </div>
+      <!-- ===== หน้า 3: ปัด (swipe) ===== -->
+      <section class="page" id="page-swipe">
+        <div class="deck">
+          <div class="deck-progress"><span id="swipeProg">0/0</span> · ❤️ <span id="swLike">0</span> · 💔 <span id="swNope">0</span></div>
 
-      <div id="tasteProfile" class="taste"></div>
-    </div>
+          <div id="swipeEmpty" class="empty hidden">ยังไม่มีเพลงให้ปัด — ไปหน้า 🔎 ค้นหา แล้วกด Run ก่อน</div>
+
+          <div id="swipeCard" class="card">
+            <div class="card-meta">
+              <h3 id="swTitle">—</h3>
+              <p id="swArtist" class="muted"></p>
+              <div id="swTags" class="card-tags"></div>
+            </div>
+            <iframe id="swPlayer" class="player" scrolling="no" frameborder="no" allow="autoplay" src=""></iframe>
+            <div class="vol-row">
+              <button id="swMute" type="button" title="ปิด/เปิดเสียง">🔊</button>
+              <input id="swVol" type="range" min="0" max="100" value="40" title="ระดับเสียง (↑/↓)">
+            </div>
+            <div class="card-actions">
+              <button id="btnNope" class="swbtn nope" title="ไม่ชอบ (← / ปัดซ้าย)">👎</button>
+              <button id="btnLike" class="swbtn like" title="ชอบ (→ / ปัดขวา)">👍</button>
+            </div>
+            <small class="hint">ปัดการ์ดซ้าย/ขวา · กดปุ่ม · หรือลูกศร ← / →</small>
+          </div>
+
+          <div id="swipeDone" class="done hidden">
+            <h3>ปัดครบแล้ว 🎉</h3>
+            <p class="muted">รสนิยมถูกบันทึก — ไปหน้า 📋 ผลลัพธ์ กด <b>✨ ตามรสนิยม</b> เพื่อจัดอันดับใหม่</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== หน้า 4: รสนิยม ===== -->
+      <section class="page" id="page-taste">
+        <h2>รสนิยมที่เรียนรู้</h2>
+        <div id="tasteProfile" class="taste"><span class="muted">ปัดเพลงในหน้า 🔥 ปัด เพื่อเริ่มเรียนรู้รสนิยมของคุณ…</span></div>
+        <p class="page-hint">ยิ่งปัดเยอะ ระบบยิ่งรู้ว่าคุณชอบแนว/คีย์/BPM/ศิลปินไหน แล้วดันเพลงแบบนั้นขึ้นอันดับต้นๆ</p>
+      </section>
+
+    </main>
+
+    <nav class="tabbar">
+      <button data-go="search" class="active"><span class="ic">🔎</span><span class="lb">ค้นหา</span></button>
+      <button data-go="results"><span class="ic">📋</span><span class="lb">ผลลัพธ์</span></button>
+      <button data-go="swipe"><span class="ic">🔥</span><span class="lb">ปัด</span></button>
+      <button data-go="taste"><span class="ic">📊</span><span class="lb">รสนิยม</span></button>
+    </nav>
+
   </div>
 
   <script src="https://w.soundcloud.com/player/api.js"></script>

@@ -54,9 +54,47 @@ themeBtn.addEventListener("click", () =>
   setTheme(document.body.dataset.theme === "dark" ? "light" : "dark"));
 function setTheme(t) {
   document.body.dataset.theme = t;
-  themeBtn.textContent = t === "dark" ? "☀️ ขาว-ส้ม" : "🌙 ดำ-ส้ม";
+  themeBtn.textContent = t === "dark" ? "☀️" : "🌙";
   localStorage.setItem("scTheme", t);
 }
+
+// ================= mobile tab pager (เลื่อนซ้ายขวา / แตะเมนูล่าง) =================
+const TABS = ["search", "results", "swipe", "taste"];
+const pager = $("pager");
+let SWIPE_READY = false;          // กันไม่ให้ deck รีเซ็ตเองตอนสไลด์กลับมา
+
+function activeTabIndex() {
+  return Math.max(0, Math.min(TABS.length - 1,
+    Math.round(pager.scrollLeft / Math.max(1, pager.clientWidth))));
+}
+function setActiveTab(name) {
+  document.querySelectorAll(".tabbar button").forEach((b) =>
+    b.classList.toggle("active", b.dataset.go === name));
+}
+function goTab(name) {
+  const i = TABS.indexOf(name);
+  if (i < 0) return;
+  pager.scrollTo({ left: i * pager.clientWidth, behavior: "smooth" });
+  setActiveTab(name);
+  if (name === "swipe") openSwipe();
+}
+document.querySelectorAll(".tabbar button").forEach((b) =>
+  b.addEventListener("click", () => goTab(b.dataset.go)));
+
+let _scrollSync;
+pager.addEventListener("scroll", () => {
+  clearTimeout(_scrollSync);
+  _scrollSync = setTimeout(() => {
+    const name = TABS[activeTabIndex()];
+    setActiveTab(name);
+    if (name === "swipe") openSwipe();
+    else if (typeof stopPlayer === "function") stopPlayer();   // ออกจากหน้าปัด = หยุดเสียง
+  }, 90);
+});
+// แตะหน้าใหม่หลังหมุนจอ ให้ snap ตรงหน้าเดิม
+window.addEventListener("resize", () => {
+  pager.scrollTo({ left: activeTabIndex() * pager.clientWidth });
+});
 
 // ---- seed mode segmented control ----
 document.querySelectorAll("#seedMode button").forEach((b) => {
@@ -105,12 +143,14 @@ async function run() {
     ROWS = data.results || [];
     sortKey = "matched_seeds"; sortDir = -1;
     HARMONIC = false; CAM_FILTER = "";
+    SWIPE_READY = false;          // ผลใหม่ -> สร้าง deck ปัดใหม่
     render();
     const demo = data.demo ? '<span class="badge">DEMO</span>' : "";
     $("status").innerHTML = `✅ ได้ ${data.count} เพลง ` + demo;
     const has = ROWS.length > 0;
     ["dlBtn", "dlMik", "dlM3u", "harmonicBtn", "lineBtn", "swipeBtn", "rerankBtn"].forEach((id) =>
       $(id).classList.toggle("hidden", !has));
+    if (has) goTab("results");    // พาไปดูผลลัพธ์เลย
   } catch (e) {
     $("status").textContent = "❌ " + e;
   } finally {
@@ -242,27 +282,26 @@ function applyVolToWidget() {
   } catch (_) {}
 }
 
-const ov = $("swipeOverlay");
-
-$("swipeBtn").addEventListener("click", openSwipe);
+$("swipeBtn").addEventListener("click", () => goTab("swipe"));
 $("rerankBtn").addEventListener("click", rerank);
-$("swipeClose").addEventListener("click", closeSwipe);
 $("btnLike").addEventListener("click", () => swipe(true));
 $("btnNope").addEventListener("click", () => swipe(false));
 if ($("swVol")) $("swVol").addEventListener("input", (e) => setVol(parseInt(e.target.value, 10)));
 if ($("swMute")) $("swMute").addEventListener("click", toggleMute);
 setVol(curVol());               // ตั้งสไลเดอร์/ไอคอนให้ตรงค่าที่จำไว้
+
 document.addEventListener("keydown", (e) => {
-  if (ov.classList.contains("hidden")) return;
+  if (TABS[activeTabIndex()] !== "swipe") return;   // ทำงานเฉพาะตอนอยู่หน้าปัด
   if (e.key === "ArrowRight") swipe(true);
   else if (e.key === "ArrowLeft") swipe(false);
   else if (e.key === "ArrowUp") { setVol(curVol() + 10); e.preventDefault(); }
   else if (e.key === "ArrowDown") { setVol(curVol() - 10); e.preventDefault(); }
-  else if (e.key === "Escape") closeSwipe();
 });
 
+function stopPlayer() { if ($("swPlayer").src) $("swPlayer").src = ""; }   // หยุดเสียง
+
 async function openSwipe() {
-  // ข้ามเพลงที่เคยปัดแล้ว
+  if (SWIPE_READY) return;        // มี deck อยู่แล้ว -> เก็บความคืบหน้าไว้ (กันรีเซ็ตตอนสไลด์กลับมา)
   try {
     const p = await (await fetch("/api/profile")).json();
     RATED = new Set(p.rated || []);
@@ -270,16 +309,42 @@ async function openSwipe() {
   } catch (_) { RATED = new Set(); }
   DECK = ROWS.filter((r) => !RATED.has(r.track_id));
   DECK_I = 0; SW_LIKE = 0; SW_NOPE = 0;
-  ov.classList.remove("hidden");
-  $("swipeDone").classList.toggle("hidden", DECK.length > 0);
-  $("swipeCard").classList.toggle("hidden", DECK.length === 0);
-  showCard();
+  SWIPE_READY = true;
+  const hasDeck = DECK.length > 0;
+  const noRows = ROWS.length === 0;
+  $("swipeEmpty").classList.toggle("hidden", !noRows);
+  $("swipeDone").classList.toggle("hidden", hasDeck || noRows);
+  $("swipeCard").classList.toggle("hidden", !hasDeck);
+  if (hasDeck) showCard();
 }
 
-function closeSwipe() {
-  ov.classList.add("hidden");
-  $("swPlayer").src = "";          // หยุดเสียง
-}
+// ----- ลากการ์ดซ้าย/ขวา = ไม่ชอบ/ชอบ (เหมือน Tinder) -----
+(function enableCardDrag() {
+  const card = $("swipeCard");
+  if (!card) return;
+  let startX = 0, dx = 0, dragging = false;
+  card.addEventListener("pointerdown", (e) => {
+    if (DECK_I >= DECK.length) return;
+    dragging = true; startX = e.clientX; dx = 0;
+    card.style.transition = "none";
+    try { card.setPointerCapture(e.pointerId); } catch (_) {}
+  });
+  card.addEventListener("pointermove", (e) => {
+    if (!dragging) return;
+    dx = e.clientX - startX;
+    card.style.transform = `translateX(${dx}px) rotate(${dx / 28}deg)`;
+    card.style.opacity = String(1 - Math.min(Math.abs(dx) / 380, 0.45));
+  });
+  const release = () => {
+    if (!dragging) return;
+    dragging = false;
+    card.style.transition = ""; card.style.transform = ""; card.style.opacity = "";
+    if (dx > 80) swipe(true);
+    else if (dx < -80) swipe(false);
+  };
+  card.addEventListener("pointerup", release);
+  card.addEventListener("pointercancel", release);
+})();
 
 function showCard() {
   $("swLike").textContent = SW_LIKE;
