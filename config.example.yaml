@@ -57,3 +57,15 @@ output: "sc_references.csv"
 
 # True = ใช้ข้อมูลปลอม (ไม่ต่อเน็ต) ไว้ลอง dashboard — รันจริงตั้งเป็น false
 demo_mode: false
+
+# ===== Auto-Downloader (Hypeddit/Playwright crate) =====
+# กด ⬇ บน dashboard -> เข้าคิว crate -> เครื่อง Mac รัน download_agent.py โหลดไฟล์ ≥320kbps ให้
+download:
+  dir: "downloads"            # โฟลเดอร์ปลายทาง (Mac ชี้ไปโฟลเดอร์เพลงจริงได้ / หรือ env DOWNLOAD_DIR)
+  min_bitrate: 320            # คุณภาพขั้นต่ำ (kbps) — ต่ำกว่านี้ = ไม่ผ่านเกณฑ์ (mark low_quality)
+  poll_seconds: 20            # agent --watch ตรวจคิวทุกกี่วินาที
+  max_tries: 3                # ลองโหลดซ้ำกี่ครั้งก่อน mark failed
+  social_unlock: false        # true = ยอมให้กด follow/like/repost ปลด gate (ใช้บัญชี SC ที่ login ใน browser profile)
+  browser_profile: "~/.sc-dl-profile"   # Playwright persistent profile (login SoundCloud ค้างไว้)
+  crate_file: "crate.json"
+  gate_rules_file: "gate_rules.json"

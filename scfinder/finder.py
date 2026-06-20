@@ -32,6 +32,8 @@ class Result:
     url: str
     track_id: int
     pref: float = 0.0          # คะแนนรสนิยมที่เรียนรู้ (Phase 4) — ไม่อยู่ใน CSV หลัก
+    purchase_url: str = ""     # ลิงก์ buy / free-DL (มัก hypeddit/toneden) — ใช้หา gate ตอนโหลด
+    downloadable: bool = False # SC เปิดปุ่ม Free Download (= ได้ original file เต็มคุณภาพ)
 
     def as_row(self) -> list:
         return [self.rank, self.matched_seeds, self.title, self.artist,
@@ -187,6 +189,8 @@ def find_references(client, cfg, store: Optional[SeenStore] = None,
             duration_min=_dur_min(t),
             url=t.get("permalink_url", ""),
             track_id=t["id"],
+            purchase_url=(t.get("purchase_url") or "").strip(),
+            downloadable=bool(t.get("downloadable") or t.get("has_downloads_left")),
         ))
 
     if store and store.enabled:

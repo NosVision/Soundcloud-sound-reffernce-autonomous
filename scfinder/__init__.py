@@ -15,3 +15,5 @@ from .store import SeenStore                        # noqa: F401
 from .camelot import to_camelot, compatible_camelot  # noqa: F401
 from .mixset import build_harmonic_set              # noqa: F401
 from .feedback import FeedbackStore, PreferenceModel, annotate_and_rank  # noqa: F401
+from .crate import Crate                              # noqa: F401
+from .resolver import classify, resolve_route         # noqa: F401

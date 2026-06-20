@@ -2,3 +2,6 @@ requests>=2.28
 PyYAML>=6.0
 Flask>=3.0
 gunicorn>=21.0
+# --- downloader (เฉพาะเครื่องที่รัน download_agent.py / Mac) ---
+mutagen>=1.46     # ตรวจ bitrate ให้ ≥320kbps
+playwright>=1.40  # กดผ่าน Hypeddit/Toneden gate (รัน `playwright install chromium` ครั้งแรก)

@@ -212,6 +212,41 @@ API ที่เปิดไว้ (เผื่อทำ mobile app ต่อ):
 
 ---
 
+## ⬇️ Auto-Downloader — Hypeddit + Playwright (ไฟล์ ≥320kbps)
+
+หา reference เจอแล้ว → กด **⬇** ที่เพลง (หรือปุ่ม **คิวโหลด**) บน dashboard/มือถือ →
+**เครื่อง Mac ที่บ้าน** โหลดไฟล์คุณภาพเต็มมาเตรียมไว้ในโฟลเดอร์เพลง เราแค่เอาไปตัด/มิกซ์ต่อ
+
+> **กฎเหล็ก: ไฟล์ต้อง ≥320kbps** — ไม่ดึงสตรีมจาก SoundCloud (ได้แค่ ~128kbps)
+> แต่เอาจาก SC **Free-Download** (ไฟล์ original) หรือผ่าน **Hypeddit/Toneden gate**
+
+**สถาปัตยกรรม (สั่งจากมือถือได้ ไม่ต้องเปิด port):**
+```
+[มือถือ/เว็บ] --⬇ /api/crate--> [คิว crate บน Supabase] <--poll-- [Mac: download_agent.py --watch]
+        เห็นสถานะ done/fail ◄─────────────┘                Resolver→route→โหลด→ตรวจ bitrate→mark
+```
+
+**4 เฟส:**
+1. **Resolver + Crate** (`scfinder/resolver.py`, `crate.py`) — จำแนกเส้นทางโหลดของแต่ละเพลง
+   (`direct_sc` / `direct_file` / `gate` / `paid` / `none`) แล้วเข้าคิว
+2. **Auto-DL direct** (`scfinder/dl_direct.py`) — เพลงที่เปิด Free DL/ลิงก์ไฟล์ตรง → โหลด original เลย
+3. **Hypeddit gate bot** (`scfinder/gatebot.py`) — Playwright state-machine กดผ่าน gate ตาม `gate_rules.json`
+4. **Review loop + Case library** (`scfinder/gate_rules.py`) — เพลงพัง → screenshot+reason ในแท็บ
+   **คิวโหลด → ต้องดู** → สอน rule ใหม่ผ่าน Playwright MCP (skill `download-crate`) → ครั้งหน้าทำเอง
+
+**ใช้งาน** (บน Mac — ดู **[AUTORUN.md](AUTORUN.md)**):
+```bash
+pip install -r requirements.txt && playwright install chromium
+python3 download_agent.py --once     # โหลดคิวรอบเดียว
+python3 download_agent.py --watch     # daemon: คอยโหลดให้ตลอด (ตั้ง launchd ได้)
+```
+ตาราง Supabase `crate` (ให้มือถือ↔Mac เห็นคิวเดียวกัน) อยู่ใน **[SUPABASE.md](SUPABASE.md)**
+
+> ⚠️ Phase 3 เปราะสุด — Hypeddit เปลี่ยน layout/มี captcha ได้ บางเพลงจะต้องสอน rule เพิ่ม
+> เป็น personal tool: รับความเสี่ยงว่าบางเพลงโหลดไม่สำเร็จ (ดู `download.social_unlock` ถ้า gate บังคับ follow/like)
+
+---
+
 ## Pipeline ทำงานยังไง (สำหรับคนจะมาแก้ต่อ)
 
 ```
@@ -255,6 +290,7 @@ seeds[] ──┬─ /tracks/{id}/related ──► candidates
 ### Phase 3 — Autonomous loop 🚧 (กำลังทำ)
 - [x] รันเป็น cron / launchd บน Mac Mini (`autorun.py` + `AUTORUN.md`)
 - [x] **แจ้งเตือนผ่าน LINE** ว่า "มี reference ใหม่ N เพลงรอคัด" (Messaging API + ปุ่ม 📱 บน dashboard)
+- [x] 🆕 **Auto-download คุณภาพ ≥320kbps** (Hypeddit/Playwright) — กด ⬇ บนมือถือ → Mac โหลดให้ (ดูหัวข้อล่าง)
 - [ ] ส่ง output เข้า Obsidian vault (NOS-VISION-BRAIN) หรือ Notion อัตโนมัติ
 - [ ] (optional) auto-สร้าง playlist บน SC จาก top picks ผ่าน oauth
 

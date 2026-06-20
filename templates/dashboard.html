@@ -49,6 +49,7 @@
       <nav class="side-nav" data-nav>
         <button data-view="search"  class="active"><svg class="ic" viewBox="0 0 24 24"><use href="#i-search"/></svg><span>ค้นหา</span></button>
         <button data-view="results"><svg class="ic" viewBox="0 0 24 24"><use href="#i-list"/></svg><span>ผลลัพธ์</span></button>
+        <button data-view="crate"><svg class="ic" viewBox="0 0 24 24"><use href="#i-download"/></svg><span>คิวโหลด</span></button>
         <button data-view="swipe"><svg class="ic" viewBox="0 0 24 24"><use href="#i-layers"/></svg><span>ปัดเลือก</span></button>
         <button data-view="taste"><svg class="ic" viewBox="0 0 24 24"><use href="#i-sliders"/></svg><span>รสนิยม</span></button>
         <button data-view="history"><svg class="ic" viewBox="0 0 24 24"><use href="#i-clock"/></svg><span>ประวัติ</span></button>
@@ -133,6 +134,7 @@
           <a id="dlMik" href="/export/mixedinkey" class="chip ok hidden"><svg class="ic" viewBox="0 0 24 24"><use href="#i-download"/></svg> MIK</a>
           <a id="dlM3u" href="/export/m3u8" class="chip hidden"><svg class="ic" viewBox="0 0 24 24"><use href="#i-download"/></svg> M3U8</a>
           <button id="lineBtn" class="chip line hidden" title="ส่งสรุปเข้า LINE"><svg class="ic" viewBox="0 0 24 24"><use href="#i-message"/></svg> LINE</button>
+          <button id="crateBtn" class="chip ok hidden" title="ส่งเพลงที่แสดงอยู่เข้าคิวโหลด (Mac จะโหลดไฟล์ ≥320 ให้)"><svg class="ic" viewBox="0 0 24 24"><use href="#i-download"/></svg> คิวโหลด</button>
         </div>
         <div id="empty" class="empty">ยังไม่มีผล — ไปหน้า “ค้นหา” ใส่ลิงก์แล้วกด Run (ลองเปิด demo mode ก่อนได้)</div>
         <div class="table-wrap">
@@ -150,12 +152,33 @@
                 <th data-k="likes">likes</th>
                 <th data-k="duration_min">min</th>
                 <th>link</th>
+                <th>⬇</th>
               </tr>
             </thead>
             <tbody></tbody>
           </table>
         </div>
         <details class="logs"><summary>log การทำงาน</summary><pre id="log"></pre></details>
+      </section>
+
+      <!-- view: คิวโหลด (Crate + Review) -->
+      <section class="view" id="view-crate">
+        <div class="view-head">
+          <h2>คิวโหลด</h2>
+          <div class="seg sm" id="crateFilter">
+            <button data-f="all" class="active">ทั้งหมด</button>
+            <button data-f="active">รอ/กำลังโหลด</button>
+            <button data-f="done">เสร็จ</button>
+            <button data-f="review">ต้องดู</button>
+          </div>
+        </div>
+        <div id="crateCounts" class="note">ยังไม่มีในคิว</div>
+        <div class="actions">
+          <button id="crateRefresh" class="chip"><svg class="ic" viewBox="0 0 24 24"><use href="#i-clock"/></svg> รีเฟรช</button>
+          <button id="crateClear" class="chip" title="ลบรายการที่เสร็จ/พังออก">ล้างที่จบแล้ว</button>
+        </div>
+        <div id="crateList" class="hist-list"><span class="muted">ยังไม่มีเพลงในคิว — ไปหน้า “ผลลัพธ์” กด ⬇ ที่เพลงที่อยากได้</span></div>
+        <p class="note">เพลงในคิวจะถูกโหลดโดยเครื่อง Mac ที่บ้าน (รัน <code>download_agent.py --watch</code>) — ได้ไฟล์คุณภาพ ≥320kbps แล้วสถานะตรงนี้จะเปลี่ยนเป็น “เสร็จ”. เพลงที่ติด gate ใหม่/พัง จะอยู่ในหมวด “ต้องดู” ให้กดลองใหม่หรือดู screenshot</p>
       </section>
 
       <!-- view: ปัดเลือก -->
@@ -220,6 +243,7 @@
     <nav class="tabbar" data-nav>
       <button data-view="search" class="active"><svg class="ic" viewBox="0 0 24 24"><use href="#i-search"/></svg><span>ค้นหา</span></button>
       <button data-view="results"><svg class="ic" viewBox="0 0 24 24"><use href="#i-list"/></svg><span>ผลลัพธ์</span></button>
+      <button data-view="crate"><svg class="ic" viewBox="0 0 24 24"><use href="#i-download"/></svg><span>คิว</span></button>
       <button data-view="swipe"><svg class="ic" viewBox="0 0 24 24"><use href="#i-layers"/></svg><span>ปัด</span></button>
       <button data-view="taste"><svg class="ic" viewBox="0 0 24 24"><use href="#i-sliders"/></svg><span>รสนิยม</span></button>
       <button data-view="history"><svg class="ic" viewBox="0 0 24 24"><use href="#i-clock"/></svg><span>ประวัติ</span></button>
