@@ -37,6 +37,17 @@ DEFAULTS = {
     "auth": {"oauth_token": "", "client_id_override": ""},
     "output": "sc_references.csv",
     "demo_mode": False,           # True = ใช้ mock data (ไม่ต่อเน็ต) ลอง dashboard ได้เลย
+    # ---- Downloader (Hypeddit/Playwright crate) ----
+    "download": {
+        "dir": "downloads",            # โฟลเดอร์ปลายทาง (Mac ชี้ไปโฟลเดอร์เพลงจริงได้)
+        "min_bitrate": 320,            # คุณภาพขั้นต่ำ (kbps) — ต่ำกว่านี้ = ไม่ผ่านเกณฑ์
+        "poll_seconds": 20,            # agent --watch poll คิวทุกกี่วินาที
+        "max_tries": 3,                # ลองโหลดซ้ำกี่ครั้งก่อน mark fail
+        "social_unlock": False,        # True = ยอมให้กด follow/like/repost ปลด gate
+        "browser_profile": "~/.sc-dl-profile",   # Playwright profile (login SC ค้างไว้)
+        "crate_file": "crate.json",
+        "gate_rules_file": "gate_rules.json",
+    },
 }
 
 
@@ -70,6 +81,15 @@ class Config:
     supabase_key: str = ""        # env SUPABASE_KEY (service_role — server-side)
     app_password: str = ""        # env APP_PASSWORD (ล็อกอิน dashboard)
     secret_key: str = ""          # env SECRET_KEY (เซ็น session)
+    # ---- Downloader (Hypeddit/Playwright crate) ----
+    download_dir: str = "downloads"
+    download_min_bitrate: int = 320
+    download_poll_seconds: int = 20
+    download_max_tries: int = 3
+    download_social_unlock: bool = False
+    download_browser_profile: str = "~/.sc-dl-profile"
+    crate_file: str = "crate.json"
+    gate_rules_file: str = "gate_rules.json"
 
     def to_public_dict(self) -> dict:
         """สำหรับส่งให้ dashboard — ตัด secret (token) ออก"""
@@ -135,6 +155,19 @@ def load_config(path: str = "config.yaml") -> Config:
         notify_top_n=int(line.get("top_n", 10) or 10),
     )
 
+    # downloader (crate) config
+    dl = data.get("download") or {}
+    cfg.download_dir = str(dl.get("dir", "downloads") or "downloads")
+    cfg.download_min_bitrate = int(dl.get("min_bitrate", 320) or 320)
+    cfg.download_poll_seconds = int(dl.get("poll_seconds", 20) or 20)
+    cfg.download_max_tries = int(dl.get("max_tries", 3) or 3)
+    cfg.download_social_unlock = bool(dl.get("social_unlock", False))
+    cfg.download_browser_profile = str(dl.get("browser_profile", "~/.sc-dl-profile")
+                                       or "~/.sc-dl-profile")
+    cfg.crate_file = str(dl.get("crate_file", "crate.json") or "crate.json")
+    cfg.gate_rules_file = str(dl.get("gate_rules_file", "gate_rules.json")
+                              or "gate_rules.json")
+
     # env override (secret + profile)
     cfg.oauth_token = os.environ.get("SC_OAUTH_TOKEN", cfg.oauth_token)
     cfg.client_id_override = os.environ.get("SC_CLIENT_ID", cfg.client_id_override)
@@ -150,6 +183,7 @@ def load_config(path: str = "config.yaml") -> Config:
                        os.environ.get("SUPABASE_SERVICE_KEY", cfg.supabase_key))
     cfg.app_password = os.environ.get("APP_PASSWORD", cfg.app_password)
     cfg.secret_key = os.environ.get("SECRET_KEY", cfg.secret_key)
+    cfg.download_dir = os.environ.get("DOWNLOAD_DIR", cfg.download_dir)
     return cfg
 
 

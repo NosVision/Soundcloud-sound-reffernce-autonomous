@@ -99,6 +99,44 @@ class SupabaseStorage:
         except Exception:
             return False
 
+    # ---------- crate (คิวโหลดเพลง — ตาราง crate) ----------
+    def load_crate(self) -> list:
+        try:
+            r = self._get(f"{self.base}/crate?select=*",
+                          headers=self._headers(), timeout=15)
+            if getattr(r, "status_code", 0) != 200:
+                return []
+            out = []
+            for x in r.json():
+                rec = dict(x.get("data") or {})
+                rec["track_id"] = x["track_id"]
+                rec["status"] = x.get("status", rec.get("status", "pending"))
+                rec["route"] = x.get("route", rec.get("route", ""))
+                out.append(rec)
+            return out
+        except Exception:
+            return []
+
+    def save_crate(self, records) -> bool:
+        # เก็บ track_id/status/route เป็นคอลัมน์ (ไว้ query) ที่เหลือยัดใน data jsonb
+        rows = []
+        for r in records:
+            data = {k: v for k, v in r.items()
+                    if k not in ("track_id", "status", "route")}
+            rows.append({"track_id": r["track_id"],
+                         "status": r.get("status", "pending"),
+                         "route": r.get("route", ""),
+                         "data": data})
+        if not rows:
+            return True
+        try:
+            self._post(f"{self.base}/crate",
+                       headers=self._headers({"Prefer": "resolution=merge-duplicates"}),
+                       json=rows, timeout=30)
+            return True
+        except Exception:           # Supabase ล่ม -> ไม่ทำให้ agent พัง
+            return False
+
     # ---------- app_state (เก็บผลรันล่าสุด ฯลฯ — ตาราง app_state) ----------
     def save_state(self, key: str, value) -> bool:
         try:

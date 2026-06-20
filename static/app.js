@@ -12,6 +12,7 @@ let sortKey = "matched_seeds";
 let sortDir = -1;
 let HARMONIC = false;
 let CAM_FILTER = "";
+let LAST_RENDER = [];
 
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) =>
@@ -72,6 +73,7 @@ function showView(name) {
   if (name === "swipe") openSwipe(); else stopPlayer();
   if (name === "taste") refreshTaste();
   if (name === "history") loadHistory();
+  if (name === "crate") startCrate(); else stopCrate();
 }
 document.querySelectorAll("[data-nav] button").forEach((b) =>
   b.addEventListener("click", () => showView(b.dataset.view)));
@@ -126,7 +128,7 @@ async function run() {
     const demo = data.demo ? '<span class="badge">DEMO</span>' : "";
     $("status").innerHTML = `<span class="ok">ได้ ${data.count} เพลง</span> ${demo}`;
     const has = ROWS.length > 0;
-    ["dlBtn", "dlMik", "dlM3u", "harmonicBtn", "lineBtn", "swipeBtn", "rerankBtn"].forEach((id) =>
+    ["dlBtn", "dlMik", "dlM3u", "harmonicBtn", "lineBtn", "crateBtn", "swipeBtn", "rerankBtn"].forEach((id) =>
       $(id).classList.toggle("hidden", !has));
     if (has) showView("results");
   } catch (e) {
@@ -162,6 +164,107 @@ $("lineBtn").addEventListener("click", async () => {
   } catch (e) { $("status").innerHTML = `<span class="err">${esc(String(e))}</span>`; }
 });
 
+// ================= crate (คิวโหลด + review) =================
+let CRATE = [], CRATE_F = "all", crateTimer = null;
+
+$("crateBtn").addEventListener("click", () => {
+  if (LAST_RENDER.length) queueTracks(LAST_RENDER);
+});
+$("crateRefresh").addEventListener("click", loadCrate);
+$("crateClear").addEventListener("click", async () => {
+  try { await fetch("/api/crate/clear", { method: "POST" }); loadCrate(); } catch (_) {}
+});
+document.querySelectorAll("#crateFilter button").forEach((b) =>
+  b.addEventListener("click", () => {
+    document.querySelectorAll("#crateFilter button").forEach((x) => x.classList.remove("active"));
+    b.classList.add("active");
+    CRATE_F = b.dataset.f;
+    renderCrate();
+  }));
+
+async function queueTracks(tracks) {
+  tracks = (tracks || []).filter(Boolean);
+  if (!tracks.length) return;
+  $("status").innerHTML = `กำลังส่ง ${tracks.length} เพลงเข้าคิวโหลด…`;
+  try {
+    const d = await (await fetch("/api/crate", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ tracks }),
+    })).json();
+    const t = (d.counts || {}).total || 0;
+    $("status").innerHTML = `<span class="ok">เข้าคิวแล้ว +${d.added}</span> (รวม ${t}) — Mac จะโหลดไฟล์ ≥320 ให้`;
+  } catch (e) { $("status").innerHTML = `<span class="err">${esc(String(e))}</span>`; }
+}
+
+function startCrate() { loadCrate(); stopCrate(); crateTimer = setInterval(loadCrate, 5000); }
+function stopCrate() { if (crateTimer) { clearInterval(crateTimer); crateTimer = null; } }
+
+async function loadCrate() {
+  try {
+    const d = await (await fetch("/api/crate")).json();
+    CRATE = d.records || [];
+    const c = d.counts || {};
+    const parts = [`รวม ${c.total || 0}`];
+    if (c.pending) parts.push(`รอ ${c.pending}`);
+    if (c.downloading) parts.push(`กำลังโหลด ${c.downloading}`);
+    if (c.done) parts.push(`เสร็จ ${c.done}`);
+    if (c.failed) parts.push(`พัง ${c.failed}`);
+    if (c.low_quality) parts.push(`คุณภาพต่ำ ${c.low_quality}`);
+    if (c.paid) parts.push(`ต้องซื้อ ${c.paid}`);
+    if (c.none) parts.push(`ไม่มีให้โหลด ${c.none}`);
+    $("crateCounts").textContent = parts.join(" · ");
+    renderCrate();
+  } catch (_) {}
+}
+
+const _ST = {
+  pending: ["รอ", "wait"], downloading: ["กำลังโหลด", "wait"], done: ["เสร็จ", "ok"],
+  failed: ["พัง", "err"], low_quality: ["คุณภาพต่ำ", "err"],
+  paid: ["ต้องซื้อ", "muted"], none: ["ไม่มีให้โหลด", "muted"],
+};
+const REVIEW = ["failed", "low_quality", "paid", "none"];
+
+function renderCrate() {
+  let list = CRATE.slice();
+  if (CRATE_F === "active") list = list.filter((r) => ["pending", "downloading"].includes(r.status));
+  else if (CRATE_F === "done") list = list.filter((r) => r.status === "done");
+  else if (CRATE_F === "review") list = list.filter((r) => REVIEW.includes(r.status));
+  if (!list.length) {
+    $("crateList").innerHTML = `<span class="muted">ไม่มีรายการในหมวดนี้</span>`;
+    return;
+  }
+  $("crateList").innerHTML = list.map((r) => {
+    const [label, cls] = _ST[r.status] || [r.status, "muted"];
+    const route = r.route ? `<span class="t">${esc(r.route)}</span>` : "";
+    const br = r.bitrate ? `<span class="t">${r.bitrate}kbps</span>` : "";
+    const reason = r.reason ? `<div class="hist-tags">${esc(r.reason)}</div>` : "";
+    const path = r.file_path ? `<div class="hist-tags">📁 ${esc(r.file_path)}</div>` : "";
+    const open = r.url
+      ? `<a class="hist-open" href="${esc(r.url)}" target="_blank" rel="noopener" title="เปิดใน SoundCloud">${icon("external")}</a>` : "";
+    const retry = REVIEW.includes(r.status)
+      ? `<button class="hist-toggle" data-id="${esc(r.track_id)}">ลองใหม่</button>` : "";
+    return `<div class="hist-item">
+      <span class="crate-st ${cls}">${esc(label)}</span>
+      <div class="hist-main">
+        <div class="hist-title">${esc(r.title || "(ไม่มีชื่อ)")} <span class="muted">${esc(r.artist || "")}</span></div>
+        <div class="hist-tags">${route}${br}</div>
+        ${reason}${path}
+      </div>
+      ${open}${retry}
+    </div>`;
+  }).join("");
+  $("crateList").querySelectorAll(".hist-toggle").forEach((btn) =>
+    btn.addEventListener("click", async () => {
+      try {
+        await fetch("/api/crate/requeue", {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ track_id: btn.dataset.id }),
+        });
+        loadCrate();
+      } catch (_) {}
+    }));
+}
+
 function render() {
   const q = $("filterText").value.trim().toLowerCase();
   let rows = ROWS.filter((r) =>
@@ -179,6 +282,7 @@ function render() {
   chip.classList.toggle("hidden", !CAM_FILTER);
   if (CAM_FILTER) chip.textContent = `key เข้ากับ ${CAM_FILTER} · ล้าง`;
 
+  LAST_RENDER = rows;
   const maxMs = Math.max(1, ...ROWS.map((r) => r.matched_seeds || 0));
   const tb = $("tbl").querySelector("tbody");
   tb.innerHTML = rows.map((r, i) => {
@@ -199,11 +303,17 @@ function render() {
       <td>${fmt(r.likes)}</td>
       <td>${r.duration_min}</td>
       <td><a href="${r.url}" target="_blank" rel="noopener">เปิด ${icon("external")}</a></td>
+      <td><button class="rowdl" data-id="${esc(r.track_id)}" title="ส่งเข้าคิวโหลด (Mac โหลดไฟล์ ≥320 ให้)">${icon("download")}</button></td>
     </tr>`;
   }).join("");
 
   tb.querySelectorAll(".cam[data-cam]").forEach((el) =>
     el.addEventListener("click", () => { CAM_FILTER = el.dataset.cam; HARMONIC = false; render(); }));
+  tb.querySelectorAll(".rowdl").forEach((el) =>
+    el.addEventListener("click", () => {
+      const r = ROWS.find((x) => String(x.track_id) === el.dataset.id);
+      if (r) { el.classList.add("queued"); queueTracks([r]); }
+    }));
 
   $("tbl").classList.toggle("hidden", rows.length === 0);
   $("empty").classList.toggle("hidden", rows.length !== 0);
@@ -513,7 +623,7 @@ async function reRate(id) {
       ROWS = d.results;
       sortKey = "matched_seeds"; sortDir = -1;
       render();
-      ["dlBtn", "dlMik", "dlM3u", "harmonicBtn", "lineBtn", "swipeBtn", "rerankBtn"]
+      ["dlBtn", "dlMik", "dlM3u", "harmonicBtn", "lineBtn", "crateBtn", "swipeBtn", "rerankBtn"]
         .forEach((id) => $(id).classList.remove("hidden"));
     }
   } catch (_) {}

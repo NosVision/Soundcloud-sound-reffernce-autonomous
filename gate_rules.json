@@ -1,0 +1,32 @@
+{
+  "rules": [
+    {
+      "name": "hypeddit-generic",
+      "domains": ["hypeddit.com", "hypeddit.co"],
+      "signature": "",
+      "steps": [
+        {"action": "wait", "seconds": 3},
+        {"action": "click_text", "text": "Free Download"},
+        {"action": "social_all"},
+        {"action": "wait", "seconds": 2},
+        {"action": "click_text", "text": "Download"},
+        {"action": "expect_download", "timeout": 60}
+      ]
+    },
+    {
+      "name": "toneden-generic",
+      "domains": ["toneden.io"],
+      "signature": "",
+      "steps": [
+        {"action": "wait", "seconds": 3},
+        {"action": "click_text", "text": "Download"},
+        {"action": "social_all"},
+        {"action": "wait", "seconds": 2},
+        {"action": "click_text", "text": "Download"},
+        {"action": "expect_download", "timeout": 60}
+      ]
+    }
+  ],
+  "stats": {},
+  "failures": []
+}

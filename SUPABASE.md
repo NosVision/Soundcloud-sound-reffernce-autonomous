@@ -31,11 +31,26 @@ create table if not exists app_state (
   value       jsonb,
   updated_at  timestamptz default now()
 );
+
+-- คิวโหลดเพลง (กด ⬇ จากมือถือ -> เครื่อง Mac ที่บ้าน poll แล้วโหลดให้)
+create table if not exists crate (
+  track_id    bigint primary key,
+  status      text default 'pending',   -- pending|downloading|done|low_quality|failed|paid|none
+  route       text,                      -- direct_sc|direct_file|gate|paid|none
+  data        jsonb,                     -- ที่เหลือ (title/artist/url/target_url/file_path/reason/screenshot/...)
+  updated_at  timestamptz default now()
+);
 ```
 
 (แอปใช้ **upsert** ผ่าน primary key — ปัด/รันซ้ำ = อัปเดต ไม่เพิ่มแถว)
 
-> ⚠️ ถ้าตั้ง Supabase ไว้ก่อนหน้านี้แล้ว ให้รัน **เฉพาะ** ส่วน `app_state` เพิ่ม (ตารางใหม่)
+> ⚠️ ถ้าตั้ง Supabase ไว้ก่อนหน้านี้แล้ว ให้รัน **เฉพาะ** ส่วน `app_state` + `crate` เพิ่ม (ตารางใหม่)
+
+### คิวโหลด (crate) ทำงานข้ามเครื่องยังไง
+มือถือกด ⬇ บน dashboard → `POST /api/crate` → แถวใน `crate` เป็น `pending`
+→ เครื่อง **Mac ที่บ้าน** รัน `download_agent.py --watch` poll ตาราง `crate` เดียวกัน
+→ เห็น pending → โหลดไฟล์ ≥320kbps → upsert สถานะ `done` กลับ → มือถือเห็นสถานะเปลี่ยน
+(ไม่ต้องเปิด port ที่ Mac — คุยผ่าน Supabase เป็นตัวกลาง)
 
 ## 2. เอา URL + Key
 
@@ -84,4 +99,4 @@ SC_PROFILE_URL=https://soundcloud.com/your-handle
 - ไม่มี → `None` → `SeenStore` / `FeedbackStore` ใช้ไฟล์ local เหมือนเดิม (ตอน dev)
 
 อยากเปลี่ยน backend (เช่นไป Firebase/Postgres ตรงๆ) → เขียน class ใหม่ที่มี
-`load_seen/save_seen/load_feedback/save_feedback` แล้ว return ใน `make_storage` ก็พอ
+`load_seen/save_seen/load_feedback/save_feedback/load_crate/save_crate` แล้ว return ใน `make_storage` ก็พอ

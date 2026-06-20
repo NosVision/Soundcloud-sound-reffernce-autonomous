@@ -28,6 +28,8 @@ from scfinder.export import EXPORTERS
 from scfinder.notify import notify_line_results
 from scfinder.feedback import FeedbackStore, PreferenceModel, annotate_and_rank
 from scfinder.storage import make_storage
+from scfinder.crate import Crate
+from scfinder.resolver import classify
 
 app = Flask(__name__)
 BASE_CFG = load_config()
@@ -311,6 +313,68 @@ def api_rerank():
     _set_last(ranked)
     return jsonify({"ok": True, "count": len(ranked),
                     "results": [r.__dict__ for r in ranked]})
+
+
+# ========== Phase 1-4: Crate (คิวโหลดเพลง — สั่งจากมือถือได้) ==========
+@app.route("/api/crate", methods=["POST"])
+def api_crate_add():
+    """
+    เพิ่มเพลงเข้าคิวโหลด (resolver จำแนก route ให้). รับได้หลายแบบ:
+      {top_n:N} | {track_ids:[...]} (เลือกจากผลรันล่าสุด) | {tracks:[...]} | {track:{...}}
+    """
+    data = request.get_json(silent=True) or {}
+    crate = Crate(BASE_CFG.crate_file, storage=STORAGE)
+
+    tracks = []
+    if data.get("top_n"):
+        _restore_last()
+        tracks = [r.__dict__ for r in _last["results"][:int(data["top_n"])]]
+    elif data.get("track_ids"):
+        _restore_last()
+        idset = {str(t) for t in data["track_ids"]}
+        tracks = [r.__dict__ for r in _last["results"] if str(r.track_id) in idset]
+    elif data.get("tracks"):
+        tracks = data["tracks"]
+    elif data.get("track"):
+        tracks = [data["track"]]
+
+    added = 0
+    for t in tracks:
+        route, target = classify(t)
+        if crate.add(t, route=route, target_url=target):
+            added += 1
+    crate.save()
+    return jsonify({"ok": True, "added": added, "counts": crate.counts()})
+
+
+@app.route("/api/crate")
+def api_crate_list():
+    """รายการคิว + สถานะ (dashboard poll ดูความคืบหน้า / สถานะ done จาก Mac)"""
+    crate = Crate(BASE_CFG.crate_file, storage=STORAGE)
+    recs = sorted(crate.records, key=lambda r: r.get("when", ""), reverse=True)
+    return jsonify({"ok": True, "counts": crate.counts(), "records": recs})
+
+
+@app.route("/api/crate/clear", methods=["POST"])
+def api_crate_clear():
+    """ลบรายการที่จบแล้ว (เก็บเฉพาะ pending/downloading)"""
+    crate = Crate(BASE_CFG.crate_file, storage=STORAGE)
+    crate.clear_finished()
+    crate.save()
+    return jsonify({"ok": True, "counts": crate.counts()})
+
+
+@app.route("/api/crate/requeue", methods=["POST"])
+def api_crate_requeue():
+    """ลองโหลดใหม่ (Review loop — เพลงที่ failed/low_quality)"""
+    data = request.get_json(silent=True) or {}
+    crate = Crate(BASE_CFG.crate_file, storage=STORAGE)
+    rec = crate._find(data.get("track_id"))
+    if not rec:
+        return jsonify({"ok": False, "info": "ไม่พบในคิว"}), 200
+    crate.add(rec, requeue=True)
+    crate.save()
+    return jsonify({"ok": True, "counts": crate.counts()})
 
 
 if __name__ == "__main__":

@@ -12,3 +12,6 @@ sc_references.m3u8
 sc_references.json
 autorun.log
 feedback.json
+crate.json
+downloads/
+*.part
