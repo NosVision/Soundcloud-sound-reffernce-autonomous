@@ -275,13 +275,21 @@ async function openSwipe() {
   if (hasDeck) showCard();
 }
 
-// ลากการ์ดซ้าย/ขวา = ไม่ชอบ/ชอบ
+// ลากการ์ดซ้าย/ขวา = ไม่ชอบ/ชอบ (Tinder-style + ป้าย LIKE/NOPE)
+const THRESHOLD = 95;
 (function enableCardDrag() {
   const card = $("swipeCard");
   if (!card) return;
+  const likeS = card.querySelector(".stamp-like");
+  const nopeS = card.querySelector(".stamp-nope");
   let startX = 0, dx = 0, dragging = false;
+  const setStamps = () => {
+    if (likeS) likeS.style.opacity = Math.max(0, Math.min(1, dx / THRESHOLD));
+    if (nopeS) nopeS.style.opacity = Math.max(0, Math.min(1, -dx / THRESHOLD));
+  };
   card.addEventListener("pointerdown", (e) => {
     if (DECK_I >= DECK.length) return;
+    if (e.target.closest(".vol-row, .card-actions")) return;  // ปล่อยให้กดปุ่ม/สไลเดอร์ได้
     dragging = true; startX = e.clientX; dx = 0;
     card.style.transition = "none";
     try { card.setPointerCapture(e.pointerId); } catch (_) {}
@@ -289,21 +297,35 @@ async function openSwipe() {
   card.addEventListener("pointermove", (e) => {
     if (!dragging) return;
     dx = e.clientX - startX;
-    card.style.transform = `translateX(${dx}px) rotate(${dx / 28}deg)`;
-    card.style.opacity = String(1 - Math.min(Math.abs(dx) / 380, 0.45));
+    card.style.transform = `translateX(${dx}px) rotate(${dx / 22}deg)`;
+    card.style.opacity = String(1 - Math.min(Math.abs(dx) / 600, 0.25));
+    setStamps();
   });
   const release = () => {
     if (!dragging) return;
     dragging = false;
-    card.style.transition = ""; card.style.transform = ""; card.style.opacity = "";
-    if (dx > 80) swipe(true);
-    else if (dx < -80) swipe(false);
+    card.style.transition = "";
+    if (likeS) likeS.style.opacity = 0;
+    if (nopeS) nopeS.style.opacity = 0;
+    if (dx > THRESHOLD) swipe(true);
+    else if (dx < -THRESHOLD) swipe(false);
+    else { card.style.transform = ""; card.style.opacity = ""; }   // เด้งกลับกลาง
   };
   card.addEventListener("pointerup", release);
   card.addEventListener("pointercancel", release);
 })();
 
 function showCard() {
+  // รีเซ็ตการ์ดกลับกลางทันที (ไม่ให้ไหลมาจากตำแหน่งที่บินออก)
+  const cardEl = $("swipeCard");
+  cardEl.classList.remove("fly-right", "fly-left");
+  cardEl.style.transition = "none";
+  cardEl.style.transform = "";
+  cardEl.style.opacity = "";
+  void cardEl.offsetWidth;                 // force reflow
+  cardEl.style.transition = "";
+  cardEl.querySelectorAll(".stamp").forEach((s) => (s.style.opacity = 0));
+
   $("swLike").textContent = SW_LIKE;
   $("swNope").textContent = SW_NOPE;
   $("swipeProg").textContent = `${Math.min(DECK_I + 1, DECK.length)}/${DECK.length}`;
@@ -334,8 +356,8 @@ async function swipe(liked) {
   liked ? SW_LIKE++ : SW_NOPE++;
   RATED.add(r.track_id);
   const card = $("swipeCard");
-  card.classList.add(liked ? "fly-right" : "fly-left");
-  setTimeout(() => card.classList.remove("fly-right", "fly-left"), 220);
+  card.style.transition = "";                       // ใช้ transition ของ .card
+  card.classList.add(liked ? "fly-right" : "fly-left");   // บินออกข้าง
   try {
     const res = await fetch("/api/feedback", {
       method: "POST", headers: { "Content-Type": "application/json" },
@@ -344,7 +366,7 @@ async function swipe(liked) {
     renderTaste(await res.json());
   } catch (_) {}
   DECK_I++;
-  setTimeout(showCard, 120);
+  setTimeout(showCard, 260);                         // รอบินออกก่อนค่อยโชว์ใบถัดไป
 }
 
 // ================= taste =================

@@ -142,11 +142,23 @@ pre{background:var(--panel2);padding:12px;border-radius:11px;font-size:11px;over
 /* ================= swipe deck ================= */
 .deck{width:100%}
 .deck-progress{font-size:13px;color:var(--mut);font-weight:700;margin:0 0 14px;text-align:center}
-.card{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:20px;
-  box-shadow:var(--shadow);transition:transform .22s ease,opacity .22s ease;
+.card-stack{position:relative}
+/* การ์ดใบถัดไปโผล่ข้างหลัง (เพิ่มมิติแบบ Tinder) */
+.ghost-card{position:absolute;inset:0;background:var(--panel);border:1px solid var(--line);
+  border-radius:18px;box-shadow:var(--shadow);transform:scale(.94) translateY(16px);
+  opacity:.55;z-index:0}
+.card{position:relative;z-index:1;overflow:hidden;background:var(--panel);border:1px solid var(--line);
+  border-radius:18px;padding:20px;box-shadow:var(--shadow);cursor:grab;
+  transition:transform .25s cubic-bezier(.2,.8,.2,1),opacity .25s ease;
   touch-action:pan-y;user-select:none;-webkit-user-select:none}
-.card.fly-right{transform:translateX(70%) rotate(8deg);opacity:0}
-.card.fly-left{transform:translateX(-70%) rotate(-8deg);opacity:0}
+.card:active{cursor:grabbing}
+.card.fly-right{transform:translateX(120%) rotate(14deg)!important;opacity:0}
+.card.fly-left{transform:translateX(-120%) rotate(-14deg)!important;opacity:0}
+/* ป้าย LIKE / NOPE โผล่ตอนลาก */
+.stamp{position:absolute;top:16px;z-index:4;font-size:26px;font-weight:900;letter-spacing:.08em;
+  padding:3px 13px;border:4px solid;border-radius:10px;opacity:0;pointer-events:none}
+.stamp-like{left:16px;color:var(--good);border-color:var(--good);transform:rotate(-15deg)}
+.stamp-nope{right:16px;color:var(--bad);border-color:var(--bad);transform:rotate(15deg)}
 .card-meta h3{margin:0 0 3px;font-size:20px;line-height:1.25}
 .card-meta .muted{margin:0;color:var(--mut);font-size:13.5px}
 .card-tags{display:flex;flex-wrap:wrap;gap:6px;margin:12px 0}

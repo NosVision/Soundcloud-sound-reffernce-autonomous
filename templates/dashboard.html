@@ -161,22 +161,27 @@
         <div class="deck">
           <div class="deck-progress"><span id="swipeProg">0/0</span> · ชอบ <span id="swLike">0</span> · ไม่ชอบ <span id="swNope">0</span></div>
           <div id="swipeEmpty" class="empty hidden">ยังไม่มีเพลงให้ปัด — ไปหน้า “ค้นหา” แล้วกด Run ก่อน</div>
-          <div id="swipeCard" class="card">
-            <div class="card-meta">
-              <h3 id="swTitle">—</h3>
-              <p id="swArtist" class="muted"></p>
-              <div id="swTags" class="card-tags"></div>
+          <div class="card-stack" id="cardStack">
+            <div class="ghost-card" aria-hidden="true"></div>
+            <div id="swipeCard" class="card">
+              <div class="stamp stamp-like">LIKE</div>
+              <div class="stamp stamp-nope">NOPE</div>
+              <div class="card-meta">
+                <h3 id="swTitle">—</h3>
+                <p id="swArtist" class="muted"></p>
+                <div id="swTags" class="card-tags"></div>
+              </div>
+              <iframe id="swPlayer" class="player" scrolling="no" frameborder="no" allow="autoplay" src=""></iframe>
+              <div class="vol-row">
+                <button id="swMute" type="button" class="icon-btn" title="ปิด/เปิดเสียง"><svg class="ic" viewBox="0 0 24 24"><use href="#i-volume"/></svg></button>
+                <input id="swVol" type="range" min="0" max="100" value="40" title="ระดับเสียง (↑/↓)">
+              </div>
+              <div class="card-actions">
+                <button id="btnNope" class="swbtn nope" title="ไม่ชอบ (← / ปัดซ้าย)"><svg class="ic" viewBox="0 0 24 24"><use href="#i-x"/></svg></button>
+                <button id="btnLike" class="swbtn like" title="ชอบ (→ / ปัดขวา)"><svg class="ic" viewBox="0 0 24 24"><use href="#i-heart"/></svg></button>
+              </div>
+              <small class="hint">ปัดการ์ดซ้าย/ขวา · กดปุ่ม · หรือลูกศร ← / →</small>
             </div>
-            <iframe id="swPlayer" class="player" scrolling="no" frameborder="no" allow="autoplay" src=""></iframe>
-            <div class="vol-row">
-              <button id="swMute" type="button" class="icon-btn" title="ปิด/เปิดเสียง"><svg class="ic" viewBox="0 0 24 24"><use href="#i-volume"/></svg></button>
-              <input id="swVol" type="range" min="0" max="100" value="40" title="ระดับเสียง (↑/↓)">
-            </div>
-            <div class="card-actions">
-              <button id="btnNope" class="swbtn nope" title="ไม่ชอบ (← / ปัดซ้าย)"><svg class="ic" viewBox="0 0 24 24"><use href="#i-x"/></svg></button>
-              <button id="btnLike" class="swbtn like" title="ชอบ (→ / ปัดขวา)"><svg class="ic" viewBox="0 0 24 24"><use href="#i-heart"/></svg></button>
-            </div>
-            <small class="hint">ปัดการ์ดซ้าย/ขวา · กดปุ่ม · หรือลูกศร ← / →</small>
           </div>
           <div id="swipeDone" class="done hidden">
             <h3>ปัดครบแล้ว</h3>
