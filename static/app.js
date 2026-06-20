@@ -328,7 +328,7 @@ const THRESHOLD = 95;
   };
   card.addEventListener("pointerdown", (e) => {
     if (DECK_I >= DECK.length) return;
-    if (e.target.closest(".vol-row, .card-actions")) return;  // ปล่อยให้กดปุ่ม/สไลเดอร์ได้
+    if (e.target.closest(".vol-row, .card-actions, a, button")) return;  // ปล่อยให้กดปุ่ม/ลิงก์/สไลเดอร์ได้
     dragging = true; startX = e.clientX; dx = 0;
     card.style.transition = "none";
     try { card.setPointerCapture(e.pointerId); } catch (_) {}
@@ -377,6 +377,8 @@ function showCard() {
   const r = DECK[DECK_I];
   $("swTitle").textContent = r.title || "(ไม่มีชื่อ)";
   $("swArtist").textContent = r.artist || "";
+  $("swOpen").href = r.url || "#";
+  $("swOpen").classList.toggle("hidden", !r.url);
   const tags = [];
   if (r.camelot) tags.push(`<span class="cam">${r.camelot}</span>`);
   if (r.bpm) tags.push(`<span class="t">${r.bpm} bpm</span>`);
@@ -472,12 +474,20 @@ function renderHistory() {
     const mark = r.liked ? "like" : "nope";
     const ic = r.liked ? "heart" : "x";
     const next = r.liked ? "เปลี่ยนเป็นไม่ชอบ" : "เปลี่ยนเป็นชอบ";
+    const title = esc(r.title || "(ไม่มีชื่อ)");
+    const titleHtml = r.url
+      ? `<a class="hist-title" href="${esc(r.url)}" target="_blank" rel="noopener">${title}</a>`
+      : `<div class="hist-title">${title}</div>`;
+    const open = r.url
+      ? `<a class="hist-open" href="${esc(r.url)}" target="_blank" rel="noopener" title="เปิดใน SoundCloud">${icon("external")}</a>`
+      : "";
     return `<div class="hist-item">
       <span class="hist-mark ${mark}">${icon(ic)}</span>
       <div class="hist-main">
-        <div class="hist-title">${esc(r.title || "(ไม่มีชื่อ)")}</div>
+        ${titleHtml}
         <div class="hist-tags">${esc(tags || "—")}</div>
       </div>
+      ${open}
       <button class="hist-toggle" data-id="${r.track_id}">${next}</button>
     </div>`;
   }).join("");

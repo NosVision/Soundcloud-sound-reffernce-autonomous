@@ -179,6 +179,10 @@ pre{background:var(--panel2);padding:12px;border-radius:11px;font-size:11px;over
 .swbtn.nope:hover{background:color-mix(in srgb,var(--bad) 14%,var(--panel2))}
 .swbtn.like{background:var(--acc);border-color:transparent}
 .swbtn.like .ic{stroke:none;fill:#fff}
+.card-open{display:inline-flex;align-items:center;gap:6px;margin-top:10px;color:var(--acc);
+  text-decoration:none;font-size:12.5px;font-weight:700}
+.card-open .ic{width:15px;height:15px}
+.card-open:hover{text-decoration:underline}
 .hint{display:block;text-align:center;color:var(--mut);font-size:11px;margin-top:8px}
 .done{text-align:center;padding:40px 8px}
 .done h3{margin:0 0 8px}
@@ -202,7 +206,13 @@ pre{background:var(--panel2);padding:12px;border-radius:11px;font-size:11px;over
 .hist-mark.like{background:var(--acc-soft)}.hist-mark.like .ic{stroke:none;fill:var(--acc)}
 .hist-mark.nope{background:color-mix(in srgb,var(--bad) 14%,transparent)}.hist-mark.nope .ic{stroke:var(--bad)}
 .hist-main{flex:1;min-width:0}
-.hist-title{font-size:13.5px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hist-title{font-size:13.5px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  color:var(--txt);text-decoration:none;display:block}
+a.hist-title:hover{color:var(--acc);text-decoration:underline}
+.hist-open{display:grid;place-items:center;width:34px;height:34px;flex:none;border:1px solid var(--line);
+  border-radius:9px;color:var(--mut);text-decoration:none}
+.hist-open:hover{border-color:var(--acc);color:var(--acc)}
+.hist-open .ic{width:16px;height:16px}
 .hist-tags{font-size:11px;color:var(--mut);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
 .hist-toggle{background:var(--panel2);border:1px solid var(--line);color:var(--mut);border-radius:8px;
   padding:7px 11px;font-size:11.5px;font-weight:700;cursor:pointer;white-space:nowrap;font-family:inherit}

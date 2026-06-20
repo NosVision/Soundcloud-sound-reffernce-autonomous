@@ -72,6 +72,7 @@ class FeedbackStore:
             "track_id": tid,
             "liked": bool(liked),
             "title": track.get("title", ""),
+            "url": track.get("url") or track.get("permalink_url") or "",
             "features": track_features(track),
             "when": datetime.now(timezone.utc).isoformat(),
         }
@@ -105,6 +106,8 @@ class PreferenceModel:
         for r in records:
             liked = r["liked"]
             for kind, val in (r.get("features") or {}).items():
+                if not kind or kind.startswith("_"):     # ข้าม meta เช่น _url
+                    continue
                 slot = self.tally.setdefault(kind, {}).setdefault(val, [0, 0])
                 slot[0 if liked else 1] += 1
 

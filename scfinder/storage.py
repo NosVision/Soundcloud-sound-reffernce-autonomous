@@ -67,11 +67,14 @@ class SupabaseStorage:
                 return []
             out = []
             for x in r.json():
+                feat = dict(x.get("features") or {})
+                url = feat.pop("_url", "")          # ดึง url ออกจาก features (กันไปปนกับ model)
                 out.append({
                     "track_id": x["track_id"],
                     "liked": bool(x.get("liked")),
                     "title": x.get("title", "") or "",
-                    "features": x.get("features") or {},
+                    "url": url or "",
+                    "features": feat,
                     "when": x.get("updated_at", "") or "",
                 })
             return out
@@ -79,11 +82,12 @@ class SupabaseStorage:
             return []
 
     def save_feedback(self, records) -> bool:
+        # ฝัง url ไว้ใน features (_url) เพื่อไม่ต้องเพิ่มคอลัมน์ในตาราง feedback
         rows = [{
             "track_id": r["track_id"],
             "liked": bool(r["liked"]),
             "title": r.get("title", "") or "",
-            "features": r.get("features") or {},
+            "features": {**(r.get("features") or {}), "_url": r.get("url", "") or ""},
         } for r in records]
         if not rows:
             return True
