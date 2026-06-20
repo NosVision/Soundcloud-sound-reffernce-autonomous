@@ -212,8 +212,9 @@ function render() {
   });
 }
 
-// ================= volume (จำไว้ใน localStorage) =================
+// ================= player + volume =================
 let scWidget = null;
+let widgetReady = false;
 let lastVol = 40;
 function curVol() {
   const v = parseInt(localStorage.getItem("swVol"), 10);
@@ -226,17 +227,38 @@ function setVol(v) {
   if ($("swVol")) $("swVol").value = v;
   const u = $("swMute") && $("swMute").querySelector("use");
   if (u) u.setAttribute("href", v === 0 ? "#i-volume-x" : "#i-volume");
-  if (scWidget) { try { scWidget.setVolume(v); } catch (_) {} }
+  if (scWidget && widgetReady) { try { scWidget.setVolume(v); } catch (_) {} }
 }
 function toggleMute() { setVol(curVol() > 0 ? 0 : (lastVol || 40)); }
-function applyVolToWidget() {
-  if (!(window.SC && SC.Widget)) return;
-  try {
-    scWidget = SC.Widget($("swPlayer"));
-    scWidget.bind(SC.Widget.Events.READY, () => { try { scWidget.setVolume(curVol()); } catch (_) {} });
-  } catch (_) {}
-}
 setVol(curVol());
+
+// โหลดเพลงเข้า player:
+//  - ครั้งแรก: ตั้ง src + สร้าง SC.Widget ครั้งเดียว
+//  - ครั้งต่อไป: ใช้ widget.load() (ไม่ reload iframe -> เร็ว + ตั้ง volume ได้จริงใน callback)
+function playTrack(url) {
+  if (scWidget && widgetReady) {
+    try {
+      scWidget.load(url, {
+        auto_play: true, show_comments: false, show_user: false,
+        visual: false, hide_related: true,
+        callback: () => { try { scWidget.setVolume(curVol()); } catch (_) {} },
+      });
+      return;
+    } catch (_) {}
+  }
+  const u = encodeURIComponent(url);
+  $("swPlayer").src = `https://w.soundcloud.com/player/?url=${u}` +
+    `&color=%23ff5a1f&auto_play=true&hide_related=true&show_comments=false&visual=false`;
+  if (window.SC && SC.Widget && !scWidget) {
+    try {
+      scWidget = SC.Widget($("swPlayer"));
+      scWidget.bind(SC.Widget.Events.READY, () => {
+        widgetReady = true;
+        try { scWidget.setVolume(curVol()); } catch (_) {}
+      });
+    } catch (_) {}
+  }
+}
 
 // ================= swipe deck =================
 let DECK = [], DECK_I = 0, SW_LIKE = 0, SW_NOPE = 0, RATED = new Set();
@@ -256,7 +278,11 @@ document.addEventListener("keydown", (e) => {
   else if (e.key === "ArrowDown") { setVol(curVol() - 10); e.preventDefault(); }
 });
 
-function stopPlayer() { if ($("swPlayer") && $("swPlayer").src) $("swPlayer").src = ""; }
+function stopPlayer() {
+  // หยุดเสียงแต่ "ไม่" ล้าง iframe -> กลับเข้ามาเล่นต่อได้เร็ว
+  if (scWidget && widgetReady) { try { scWidget.pause(); } catch (_) {} }
+  else if ($("swPlayer") && $("swPlayer").src) $("swPlayer").src = "";
+}
 
 async function openSwipe() {
   if (SWIPE_READY) return;            // เก็บความคืบหน้าไว้ตอนสลับหน้าไปมา
@@ -344,10 +370,7 @@ function showCard() {
   if (r.genre) tags.push(`<span class="t">${esc(r.genre)}</span>`);
   tags.push(`<span class="t">${r.matched_seeds} seeds</span>`);
   $("swTags").innerHTML = tags.join("");
-  const u = encodeURIComponent(r.url);
-  $("swPlayer").src = `https://w.soundcloud.com/player/?url=${u}` +
-    `&color=%23ff5a1f&auto_play=true&hide_related=true&show_comments=false&visual=false`;
-  applyVolToWidget();
+  playTrack(r.url);
 }
 
 async function swipe(liked) {
