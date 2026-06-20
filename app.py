@@ -223,6 +223,30 @@ def api_profile():
                     **_profile_payload(store)})
 
 
+@app.route("/api/history")
+def api_history():
+    """ประวัติทุกเพลงที่เคยกด like/dislike (ใหม่สุดก่อน)"""
+    store = FeedbackStore(FEEDBACK_FILE, storage=STORAGE)
+    recs = sorted(store.records, key=lambda r: r.get("when", ""), reverse=True)
+    return jsonify({"ok": True, "records": recs, **_profile_payload(store)})
+
+
+@app.route("/api/rate_toggle", methods=["POST"])
+def api_rate_toggle():
+    """สลับ like<->dislike ของเพลงที่เคยปัด (คง features/title เดิมไว้)"""
+    from datetime import datetime, timezone
+    data = request.get_json(silent=True) or {}
+    tid = str(data.get("track_id", ""))
+    store = FeedbackStore(FEEDBACK_FILE, storage=STORAGE)
+    rec = next((r for r in store.records if str(r["track_id"]) == tid), None)
+    if not rec:
+        return jsonify({"ok": False, "info": "ไม่พบรายการ"}), 200
+    rec["liked"] = not rec["liked"]
+    rec["when"] = datetime.now(timezone.utc).isoformat()
+    store.save()
+    return jsonify({"ok": True, **_profile_payload(store)})
+
+
 @app.route("/api/rerank", methods=["POST"])
 def api_rerank():
     """จัดอันดับผลรันล่าสุดใหม่ด้วยรสนิยมที่เรียนรู้ (co-occurrence ยังนำ)"""

@@ -2,7 +2,7 @@
 <html lang="th">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta name="theme-color" content="#ff5a1f">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -13,90 +13,132 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body data-theme="dark">
+
+  <!-- ===== icon sprite (line icons, สไตล์ minimal) ===== -->
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <defs>
+      <g id="i-logo"><path d="M4 14v-2a8 8 0 0 1 16 0v2"/><rect x="2.5" y="13.5" width="4" height="7" rx="1.5"/><rect x="17.5" y="13.5" width="4" height="7" rx="1.5"/></g>
+      <g id="i-search"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.6" y2="16.6"/></g>
+      <g id="i-list"><line x1="8" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="20" y2="12"/><line x1="8" y1="18" x2="20" y2="18"/><circle cx="4" cy="6" r="1"/><circle cx="4" cy="12" r="1"/><circle cx="4" cy="18" r="1"/></g>
+      <g id="i-layers"><polygon points="12 3 21 7.5 12 12 3 7.5 12 3"/><polyline points="3 16.5 12 21 21 16.5"/><polyline points="3 12 12 16.5 21 12"/></g>
+      <g id="i-sliders"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1.5" y1="14" x2="6.5" y2="14"/><line x1="9.5" y1="8" x2="14.5" y2="8"/><line x1="17.5" y1="16" x2="22.5" y2="16"/></g>
+      <g id="i-clock"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15.5 14"/></g>
+      <g id="i-heart"><path d="M12 20.5l-1.45-1.32C5.4 14.5 2 11.4 2 7.6 2 4.9 4 3 6.5 3c1.74 0 3.4 1.05 4.5 2.6C12.1 4.05 13.76 3 15.5 3 18 3 20 4.9 20 7.6c0 3.8-3.4 6.9-8.55 11.58L12 20.5z"/></g>
+      <g id="i-x"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></g>
+      <g id="i-sun"><circle cx="12" cy="12" r="4"/><line x1="12" y1="2" x2="12" y2="4"/><line x1="12" y1="20" x2="12" y2="22"/><line x1="4.2" y1="4.2" x2="5.6" y2="5.6"/><line x1="18.4" y1="18.4" x2="19.8" y2="19.8"/><line x1="2" y1="12" x2="4" y2="12"/><line x1="20" y1="12" x2="22" y2="12"/><line x1="4.2" y1="19.8" x2="5.6" y2="18.4"/><line x1="18.4" y1="5.6" x2="19.8" y2="4.2"/></g>
+      <g id="i-moon"><path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8z"/></g>
+      <g id="i-volume"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M19 5.5a9 9 0 0 1 0 13"/></g>
+      <g id="i-volume-x"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="22" y1="9" x2="16" y2="15"/><line x1="16" y1="9" x2="22" y2="15"/></g>
+      <g id="i-download"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></g>
+      <g id="i-spark"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9L12 3z"/></g>
+      <g id="i-message"><path d="M21 11.5a8.5 8.5 0 0 1-8.5 8.5 8.4 8.4 0 0 1-3.9-.9L3 21l1.9-5.6a8.5 8.5 0 1 1 16.1-3.9z"/></g>
+      <g id="i-external"><path d="M14 4h6v6"/><line x1="20" y1="4" x2="11" y2="13"/><path d="M18 14v5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h5"/></g>
+      <g id="i-logout"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></g>
+      <g id="i-play"><polygon points="6 4 20 12 6 20 6 4"/></g>
+    </defs>
+  </svg>
+
   <div class="app">
 
-    <header>
-      <div class="brand">
-        <div class="logo">🎧</div>
-        <h1>SC Finder</h1>
+    <!-- ===== Sidebar (desktop) ===== -->
+    <aside class="sidebar">
+      <div class="side-brand">
+        <span class="logo"><svg class="ic" viewBox="0 0 24 24"><use href="#i-logo"/></svg></span>
+        <span class="side-title">SC Finder</span>
+      </div>
+      <nav class="side-nav" data-nav>
+        <button data-view="search"  class="active"><svg class="ic" viewBox="0 0 24 24"><use href="#i-search"/></svg><span>ค้นหา</span></button>
+        <button data-view="results"><svg class="ic" viewBox="0 0 24 24"><use href="#i-list"/></svg><span>ผลลัพธ์</span></button>
+        <button data-view="swipe"><svg class="ic" viewBox="0 0 24 24"><use href="#i-layers"/></svg><span>ปัดเลือก</span></button>
+        <button data-view="taste"><svg class="ic" viewBox="0 0 24 24"><use href="#i-sliders"/></svg><span>รสนิยม</span></button>
+        <button data-view="history"><svg class="ic" viewBox="0 0 24 24"><use href="#i-clock"/></svg><span>ประวัติ</span></button>
+      </nav>
+      <div class="side-foot">
+        <button id="themeBtn" class="icon-btn" title="สลับธีม"><svg class="ic" viewBox="0 0 24 24"><use href="#i-sun"/></svg></button>
+        <a href="/logout" class="icon-btn" id="logoutBtn" title="ออกจากระบบ"><svg class="ic" viewBox="0 0 24 24"><use href="#i-logout"/></svg></a>
+      </div>
+    </aside>
+
+    <!-- ===== Top bar (mobile) ===== -->
+    <header class="topbar">
+      <div class="side-brand">
+        <span class="logo"><svg class="ic" viewBox="0 0 24 24"><use href="#i-logo"/></svg></span>
+        <span class="side-title">SC Finder</span>
       </div>
       <div class="head-btns">
-        <button id="themeBtn" class="theme-btn" title="สลับธีม">☀️</button>
-        <a href="/logout" class="theme-btn" id="logoutBtn">ออก</a>
+        <button id="themeBtnM" class="icon-btn" title="สลับธีม"><svg class="ic" viewBox="0 0 24 24"><use href="#i-sun"/></svg></button>
+        <a href="/logout" class="icon-btn" title="ออกจากระบบ"><svg class="ic" viewBox="0 0 24 24"><use href="#i-logout"/></svg></a>
       </div>
     </header>
 
-    <div id="status" class="status"></div>
+    <!-- ===== Content ===== -->
+    <main class="content">
+      <div id="status" class="status"></div>
 
-    <main class="pager" id="pager">
-
-      <!-- ===== หน้า 1: ค้นหา ===== -->
-      <section class="page" id="page-search">
-        <h2>1 · ใส่เพลงที่ชอบ (seed)</h2>
-
-        <label>วิธีเลือก seed</label>
-        <div class="seg" id="seedMode">
-          <button data-mode="urls" class="active">ลิงก์เพลง</button>
-          <button data-mode="likes">likes</button>
-          <button data-mode="both">ทั้งสอง</button>
+      <!-- view: ค้นหา -->
+      <section class="view active" id="view-search">
+        <div class="sheet">
+          <h2>ใส่เพลงที่ชอบ (seed)</h2>
+          <label>วิธีเลือก seed</label>
+          <div class="seg" id="seedMode">
+            <button data-mode="urls" class="active">ลิงก์เพลง</button>
+            <button data-mode="likes">likes</button>
+            <button data-mode="both">ทั้งสอง</button>
+          </div>
+          <div id="urlsBox">
+            <label>วางลิงก์ SoundCloud — บรรทัดละ 1 ลิงก์</label>
+            <textarea id="seed_urls" rows="4"
+              placeholder="https://soundcloud.com/artist/track-1&#10;https://soundcloud.com/artist/track-2">{{ "\n".join(cfg.seed_urls) }}</textarea>
+            <small>ยิ่งใส่หลากหลายในแนวเดียวกัน ผลยิ่งตรง</small>
+          </div>
+          <div id="profileBox" class="hidden">
+            <label>Profile URL ของคุณ</label>
+            <input id="profile_url" type="text" value="{{ cfg.profile_url }}" placeholder="https://soundcloud.com/your-handle">
+          </div>
         </div>
 
-        <div id="urlsBox">
-          <label>วางลิงก์ SoundCloud (เพลงที่ชอบ) — บรรทัดละ 1 ลิงก์</label>
-          <textarea id="seed_urls" rows="4"
-            placeholder="https://soundcloud.com/artist/track-1&#10;https://soundcloud.com/artist/track-2">{{ "\n".join(cfg.seed_urls) }}</textarea>
-          <small>ยิ่งใส่หลากหลายในแนวเดียวกัน ผลยิ่งตรง</small>
+        <div class="sheet">
+          <h2>ตั้งค่า</h2>
+          <div class="grid">
+            <div><label>max seeds</label><input id="max_seeds" type="number" value="{{ cfg.max_seeds }}"></div>
+            <div><label>target (จำนวนผล)</label><input id="target" type="number" value="{{ cfg.target }}"></div>
+            <div><label>related/seed</label><input id="related_per_seed" type="number" value="{{ cfg.related_per_seed }}"></div>
+            <div><label>ยาวขั้นต่ำ (นาที)</label><input id="duration_min" type="number" step="0.5" value="{{ cfg.duration_min }}"></div>
+            <div><label>ยาวสูงสุด (นาที)</label><input id="duration_max" type="number" step="0.5" value="{{ cfg.duration_max }}"></div>
+            <div><label>BPM ขั้นต่ำ</label><input id="bpm_min" type="number" value="{{ cfg.bpm_min }}"></div>
+            <div><label>BPM สูงสุด</label><input id="bpm_max" type="number" value="{{ cfg.bpm_max }}"></div>
+          </div>
+          <div class="toggles">
+            <label class="chk"><input id="dedupe_enabled" type="checkbox" {% if cfg.dedupe_enabled %}checked{% endif %}> dedupe ข้ามรอบ (ไม่เสนอซ้ำ)</label>
+            <label class="chk"><input id="demo_mode" type="checkbox" {% if cfg.demo_mode %}checked{% endif %}> demo mode (ไม่ต่อเน็ต — ลองได้เลย)</label>
+          </div>
+          <button id="runBtn" class="btn-primary"><svg class="ic" viewBox="0 0 24 24"><use href="#i-play"/></svg> Run</button>
         </div>
-
-        <div id="profileBox" class="hidden">
-          <label>Profile URL ของคุณ</label>
-          <input id="profile_url" type="text" value="{{ cfg.profile_url }}"
-                 placeholder="https://soundcloud.com/your-handle">
-        </div>
-
-        <h2>2 · ตั้งค่า</h2>
-        <div class="grid">
-          <div><label>max seeds</label><input id="max_seeds" type="number" value="{{ cfg.max_seeds }}"></div>
-          <div><label>target (จำนวนผล)</label><input id="target" type="number" value="{{ cfg.target }}"></div>
-          <div><label>related/seed</label><input id="related_per_seed" type="number" value="{{ cfg.related_per_seed }}"></div>
-          <div><label>ยาวขั้นต่ำ (นาที)</label><input id="duration_min" type="number" step="0.5" value="{{ cfg.duration_min }}"></div>
-          <div><label>ยาวสูงสุด (นาที)</label><input id="duration_max" type="number" step="0.5" value="{{ cfg.duration_max }}"></div>
-          <div><label>BPM ขั้นต่ำ</label><input id="bpm_min" type="number" value="{{ cfg.bpm_min }}"></div>
-          <div><label>BPM สูงสุด</label><input id="bpm_max" type="number" value="{{ cfg.bpm_max }}"></div>
-        </div>
-
-        <div class="toggles">
-          <label class="chk"><input id="dedupe_enabled" type="checkbox" {% if cfg.dedupe_enabled %}checked{% endif %}> dedupe ข้ามรอบ (ไม่เสนอซ้ำ)</label>
-          <label class="chk"><input id="demo_mode" type="checkbox" {% if cfg.demo_mode %}checked{% endif %}> demo mode (ไม่ต่อเน็ต — ลองได้เลย)</label>
-        </div>
-
-        <button id="runBtn" class="run">▶ Run</button>
-        <p class="page-hint">ปัดซ้าย/ขวา หรือแตะแถบเมนูด้านล่างเพื่อเปลี่ยนหน้า</p>
       </section>
 
-      <!-- ===== หน้า 2: ผลลัพธ์ ===== -->
-      <section class="page" id="page-results">
-        <div class="results-head">
+      <!-- view: ผลลัพธ์ -->
+      <section class="view" id="view-results">
+        <div class="view-head">
           <h2>ผลลัพธ์</h2>
           <input id="filterText" placeholder="กรองชื่อ/ศิลปิน…" class="filter">
         </div>
         <div class="actions">
-          <button id="harmonicBtn" class="mini hidden" title="เรียงเป็นลำดับที่ mix ต่อกันได้">🎚 Harmonic</button>
-          <button id="swipeBtn" class="mini hidden" title="ฟังแล้วปัดซ้าย/ขวา">🔥 Swipe</button>
-          <button id="rerankBtn" class="mini hidden" title="จัดอันดับใหม่ตามรสนิยมที่เรียนรู้">✨ ตามรสนิยม</button>
-          <span id="camChip" class="cam-chip hidden"></span>
-          <a id="dlBtn" href="/download" class="dl hidden">⬇ CSV</a>
-          <a id="dlMik" href="/export/mixedinkey" class="dl mik hidden">⬇ MIK</a>
-          <a id="dlM3u" href="/export/m3u8" class="dl alt hidden">⬇ M3U8</a>
-          <button id="lineBtn" class="dl line hidden" title="ส่งสรุปเข้า LINE">📱 LINE</button>
+          <button id="harmonicBtn" class="chip hidden" title="เรียงลำดับที่ mix ต่อกันได้"><svg class="ic" viewBox="0 0 24 24"><use href="#i-sliders"/></svg> Harmonic</button>
+          <button id="swipeBtn" class="chip hidden" title="ฟังแล้วปัดเลือก"><svg class="ic" viewBox="0 0 24 24"><use href="#i-layers"/></svg> ปัดเลือก</button>
+          <button id="rerankBtn" class="chip hidden" title="จัดอันดับใหม่ตามรสนิยม"><svg class="ic" viewBox="0 0 24 24"><use href="#i-spark"/></svg> ตามรสนิยม</button>
+          <span id="camChip" class="chip accent hidden"></span>
+          <a id="dlBtn" href="/download" class="chip ok hidden"><svg class="ic" viewBox="0 0 24 24"><use href="#i-download"/></svg> CSV</a>
+          <a id="dlMik" href="/export/mixedinkey" class="chip ok hidden"><svg class="ic" viewBox="0 0 24 24"><use href="#i-download"/></svg> MIK</a>
+          <a id="dlM3u" href="/export/m3u8" class="chip hidden"><svg class="ic" viewBox="0 0 24 24"><use href="#i-download"/></svg> M3U8</a>
+          <button id="lineBtn" class="chip line hidden" title="ส่งสรุปเข้า LINE"><svg class="ic" viewBox="0 0 24 24"><use href="#i-message"/></svg> LINE</button>
         </div>
-        <div id="empty" class="empty">ยังไม่มีผล — ไปหน้า 🔎 ค้นหา ใส่ลิงก์แล้วกด Run (ลองเปิด demo mode ดูก่อนได้)</div>
+        <div id="empty" class="empty">ยังไม่มีผล — ไปหน้า “ค้นหา” ใส่ลิงก์แล้วกด Run (ลองเปิด demo mode ก่อนได้)</div>
         <div class="table-wrap">
           <table id="tbl" class="hidden">
             <thead>
               <tr>
                 <th data-k="rank">#</th>
-                <th data-k="matched_seeds">matched_seeds ▼</th>
+                <th data-k="matched_seeds">matched_seeds</th>
                 <th data-k="title">title</th>
                 <th data-k="artist">artist</th>
                 <th data-k="bpm">bpm</th>
@@ -114,13 +156,11 @@
         <details class="logs"><summary>log การทำงาน</summary><pre id="log"></pre></details>
       </section>
 
-      <!-- ===== หน้า 3: ปัด (swipe) ===== -->
-      <section class="page" id="page-swipe">
+      <!-- view: ปัดเลือก -->
+      <section class="view" id="view-swipe">
         <div class="deck">
-          <div class="deck-progress"><span id="swipeProg">0/0</span> · ❤️ <span id="swLike">0</span> · 💔 <span id="swNope">0</span></div>
-
-          <div id="swipeEmpty" class="empty hidden">ยังไม่มีเพลงให้ปัด — ไปหน้า 🔎 ค้นหา แล้วกด Run ก่อน</div>
-
+          <div class="deck-progress"><span id="swipeProg">0/0</span> · ชอบ <span id="swLike">0</span> · ไม่ชอบ <span id="swNope">0</span></div>
+          <div id="swipeEmpty" class="empty hidden">ยังไม่มีเพลงให้ปัด — ไปหน้า “ค้นหา” แล้วกด Run ก่อน</div>
           <div id="swipeCard" class="card">
             <div class="card-meta">
               <h3 id="swTitle">—</h3>
@@ -129,37 +169,52 @@
             </div>
             <iframe id="swPlayer" class="player" scrolling="no" frameborder="no" allow="autoplay" src=""></iframe>
             <div class="vol-row">
-              <button id="swMute" type="button" title="ปิด/เปิดเสียง">🔊</button>
+              <button id="swMute" type="button" class="icon-btn" title="ปิด/เปิดเสียง"><svg class="ic" viewBox="0 0 24 24"><use href="#i-volume"/></svg></button>
               <input id="swVol" type="range" min="0" max="100" value="40" title="ระดับเสียง (↑/↓)">
             </div>
             <div class="card-actions">
-              <button id="btnNope" class="swbtn nope" title="ไม่ชอบ (← / ปัดซ้าย)">👎</button>
-              <button id="btnLike" class="swbtn like" title="ชอบ (→ / ปัดขวา)">👍</button>
+              <button id="btnNope" class="swbtn nope" title="ไม่ชอบ (← / ปัดซ้าย)"><svg class="ic" viewBox="0 0 24 24"><use href="#i-x"/></svg></button>
+              <button id="btnLike" class="swbtn like" title="ชอบ (→ / ปัดขวา)"><svg class="ic" viewBox="0 0 24 24"><use href="#i-heart"/></svg></button>
             </div>
             <small class="hint">ปัดการ์ดซ้าย/ขวา · กดปุ่ม · หรือลูกศร ← / →</small>
           </div>
-
           <div id="swipeDone" class="done hidden">
-            <h3>ปัดครบแล้ว 🎉</h3>
-            <p class="muted">รสนิยมถูกบันทึก — ไปหน้า 📋 ผลลัพธ์ กด <b>✨ ตามรสนิยม</b> เพื่อจัดอันดับใหม่</p>
+            <h3>ปัดครบแล้ว</h3>
+            <p class="muted">รสนิยมถูกบันทึก — ไปหน้า “ผลลัพธ์” กด “ตามรสนิยม” เพื่อจัดอันดับใหม่</p>
           </div>
         </div>
       </section>
 
-      <!-- ===== หน้า 4: รสนิยม ===== -->
-      <section class="page" id="page-taste">
+      <!-- view: รสนิยม -->
+      <section class="view" id="view-taste">
         <h2>รสนิยมที่เรียนรู้</h2>
-        <div id="tasteProfile" class="taste"><span class="muted">ปัดเพลงในหน้า 🔥 ปัด เพื่อเริ่มเรียนรู้รสนิยมของคุณ…</span></div>
-        <p class="page-hint">ยิ่งปัดเยอะ ระบบยิ่งรู้ว่าคุณชอบแนว/คีย์/BPM/ศิลปินไหน แล้วดันเพลงแบบนั้นขึ้นอันดับต้นๆ</p>
+        <div id="tasteProfile" class="taste"><span class="muted">ปัดเพลงในหน้า “ปัดเลือก” เพื่อเริ่มเรียนรู้รสนิยมของคุณ…</span></div>
+        <p class="note">ยิ่งปัดเยอะ ระบบยิ่งรู้ว่าคุณชอบแนว/คีย์/BPM/ศิลปินไหน แล้วดันเพลงแบบนั้นขึ้นอันดับต้นๆ</p>
+      </section>
+
+      <!-- view: ประวัติ -->
+      <section class="view" id="view-history">
+        <div class="view-head">
+          <h2>ประวัติที่เคยปัด</h2>
+          <div class="seg sm" id="histFilter">
+            <button data-f="all" class="active">ทั้งหมด</button>
+            <button data-f="like">ชอบ</button>
+            <button data-f="nope">ไม่ชอบ</button>
+          </div>
+        </div>
+        <div id="histCounts" class="note"></div>
+        <div id="historyList" class="hist-list"><span class="muted">ยังไม่มีประวัติ — ไปปัดเพลงก่อน</span></div>
       </section>
 
     </main>
 
-    <nav class="tabbar">
-      <button data-go="search" class="active"><span class="ic">🔎</span><span class="lb">ค้นหา</span></button>
-      <button data-go="results"><span class="ic">📋</span><span class="lb">ผลลัพธ์</span></button>
-      <button data-go="swipe"><span class="ic">🔥</span><span class="lb">ปัด</span></button>
-      <button data-go="taste"><span class="ic">📊</span><span class="lb">รสนิยม</span></button>
+    <!-- ===== Bottom nav (mobile) ===== -->
+    <nav class="tabbar" data-nav>
+      <button data-view="search" class="active"><svg class="ic" viewBox="0 0 24 24"><use href="#i-search"/></svg><span>ค้นหา</span></button>
+      <button data-view="results"><svg class="ic" viewBox="0 0 24 24"><use href="#i-list"/></svg><span>ผลลัพธ์</span></button>
+      <button data-view="swipe"><svg class="ic" viewBox="0 0 24 24"><use href="#i-layers"/></svg><span>ปัด</span></button>
+      <button data-view="taste"><svg class="ic" viewBox="0 0 24 24"><use href="#i-sliders"/></svg><span>รสนิยม</span></button>
+      <button data-view="history"><svg class="ic" viewBox="0 0 24 24"><use href="#i-clock"/></svg><span>ประวัติ</span></button>
     </nav>
 
   </div>
